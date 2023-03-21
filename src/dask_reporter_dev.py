@@ -4,6 +4,7 @@ import logging
 import argparse
 import pandas as pd
 from qhist_runner import QhistRunner
+from qhist_parser import JobsSummary
 from getpass import getuser
 
 def get_parser():
@@ -130,6 +131,14 @@ def main():
 
     runner = QhistRunner(args.start_date, args.end_date, args.filename, args.user)
     result = runner.run_shell_code()
+
+    jobs=JobsSummary(args.filename)
+    jobs.user_report()
+
+    if (args.user=='all'):
+        report = 'users_'+args.start_date+'-'+args.end_date+'.txt'
+        jobs.csg_report(report)
+    exit()
 
     jobs = pd.read_csv(args.filename)
 
