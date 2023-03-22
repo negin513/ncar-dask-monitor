@@ -76,7 +76,7 @@ def bin_summary(
     )
 
 
-class DaskReportGenerator:
+class JobsSummary:
     """
     A class that reads a qhist log file, parse, provide some statistics on Dask jobs memory usage.
 
@@ -86,7 +86,7 @@ class DaskReportGenerator:
 
     def __init__(self, filename):
         """
-        Initializes a DaskReportGenerator object.
+        Initializes a JobsSummary object.
 
         Args:
             filename (str): The name of the file to extract data from.
@@ -163,7 +163,8 @@ class DaskReportGenerator:
                 "Job ID": "count",
             }
         )
-        dj_80 = grouped_dj[grouped_dj["Unused Mem (%)"] > 80]
+        # -- show all users with Unused Mem > 80%
+        dj_80 = grouped_dj[grouped_dj["Unused Mem (%)"] >= 0]
         dj_80["Unused Core-Hour (GB.hr)"] = (
             dj_80["Unused Mem (GB)"] * dj_80["Elapsed (h)"] * dj_80["Job ID"]
         )
