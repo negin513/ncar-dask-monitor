@@ -20,8 +20,8 @@ from getpass import getuser
 
 import pandas as pd
 
-from qhist_parser import JobsSummary
 from qhist_runner import QhistRunner
+from report_generator import JobsSummary
 
 
 def get_parser():
@@ -126,11 +126,12 @@ def main():
     result = runner.run_shell_code()
 
     jobs = JobsSummary(args.filename)
-    jobs.user_report()
+    jobs.dask_user_report()
 
     if args.user == "all":
         report = "users_" + args.start_date + "-" + args.end_date + ".txt"
-        jobs.csg_report(report)
+        logging.info(f"All users report is saved in {report}")
+        jobs.dask_csg_report(report)
 
 
 if __name__ == "__main__":

@@ -1,3 +1,4 @@
+import sys
 import subprocess
 
 class QhistRunner:
@@ -48,7 +49,7 @@ class QhistRunner:
                         " -c ", " |tee " + self.filename
 
         command = ''.join(str(i) for i in command)
-        #print (command)
+        print (command)
         return command
 
     def run_shell_code(self):
@@ -62,8 +63,8 @@ class QhistRunner:
         process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         stdout, stderr = process.communicate()
         if stderr:
-            return f"Error: {stderr.decode('utf-8').strip()}"
+            error_msg = f"Error: {stderr.decode('utf-8').strip()}"
+            print(error_msg)
+            sys.exit(1)  # Exits the script with an error code
         else:
             return f"Result: {stdout.decode('utf-8').strip()}"
-
-
