@@ -105,13 +105,23 @@ def main():
     parser = get_parser()
     args = parser.parse_args()
 
+    if not args.start_date and not args.days:
+        parser.error("Either --start-date or -days option must be provided.")
+
+    # Calculate start_date and end_date based on days provided
+    if args.days:
+        end_date = datetime.now()
+        start_date = end_date - timedelta(days=args.days)
+        args.start_date = start_date.strftime('%Y%m%d')
+        args.end_date = end_date.strftime('%Y%m%d')
+
     # Check if start and end dates are provided correctly
     if args.start_date and not args.end_date:
         parser.error("End date is required if start date is provided.")
     if args.end_date and not args.start_date:
         parser.error("Start date is required if end date is provided.")
-    if not args.start_date and not args.d:
-        raise ValueError("Either start-date or -d option must be provided.")
+    if args.end_date < args.start_date:
+        parser.error("End date must be greater than start date.")
 
     if args.verbose:
         logging.basicConfig(level=logging.DEBUG, format="%(message)s")
@@ -129,7 +139,7 @@ def main():
     jobs.dask_user_report()
 
     if args.user == "all":
-        report = "users_" + args.start_date + "-" + args.end_date + ".txt"
+        report = "all_users_" + args.start_date + "-" + args.end_date + ".txt"
         logging.info(f"All users report is saved in {report}")
         jobs.dask_csg_report(report)
 
