@@ -88,6 +88,14 @@ def get_parser():
     )
 
     parser.add_argument(
+        "-t", "--table",
+        dest="table",
+        required=False,
+        action="store_true",
+        help="Write user report in a table format. [default: %(default)s]",
+    )
+
+    parser.add_argument(
         "-v",
         "--verbose",
         action="store_true",
@@ -136,7 +144,7 @@ def main():
     result = runner.run_shell_code()
 
     jobs = JobsSummary(args.filename)
-    jobs.dask_user_report()
+    jobs.dask_user_report(args.table)
 
     if args.user == "all":
         report = "all_users_" + args.start_date + "-" + args.end_date + ".txt"

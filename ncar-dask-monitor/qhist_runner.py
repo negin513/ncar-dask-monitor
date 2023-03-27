@@ -40,16 +40,15 @@ class QhistRunner:
                         " --timefmt=long ", \
                         " -p " + self.start_date+'-'+self.end_date, \
                         " -u " + self.username, \
-                        " -c ", " |tee " + self.filename
+                        " -c ", " >& " + self.filename
 
         else:
             command = "qhist --format="+qformat+ \
                         " --timefmt=long ", \
                         " -p " + self.start_date+'-'+self.end_date, \
-                        " -c ", " |tee " + self.filename
+                        " -c ", " >& " + self.filename
 
         command = ''.join(str(i) for i in command)
-        print (command)
         return command
 
     def run_shell_code(self):
