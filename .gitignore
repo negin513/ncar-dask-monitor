@@ -1,3 +1,43 @@
+# Byte-compiled / optimized / DLL files
+ __pycache__/
+ *.py[cod]
+ *$py.class
+
+# Distribution / packaging
+dist/
+build/
+.eggs/
+*.egg
+*.egg-info/
+
 #Ipython Notebook
 *.ipynb_checkpoints
-*.ipynb
+.ipynb
+
+# Environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Logs and other generated files
+*.log
+*.swp
+*.swo
+*.swn
+*.swn
+*.swm
+
+# Other
+*.DS_Store
+*.pyo
+*.rej
+*.~*
+.*.swp
+*.bak
+*.backup
+*.old
+
