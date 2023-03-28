@@ -13,15 +13,22 @@ To see the available options:
 
     ./dask_mem_usage.py --help
 
+Examples:
+    ./dask_mem_usage.py --start_date 20230304 --end_date 20230314
+
+or
+    ./dask_mem_usage.py --day 10 --user all --table
+
 """
 import argparse
 import logging
 from getpass import getuser
+from datetime import datetime, timedelta
 
 import pandas as pd
 
-from qhist_runner import QhistRunner
-from report_generator import JobsSummary
+from .qhist_runner import QhistRunner
+from .report_generator import JobsSummary
 
 
 def get_parser():
@@ -88,6 +95,14 @@ def get_parser():
     )
 
     parser.add_argument(
+        "-t", "--table",
+        dest="table",
+        required=False,
+        action="store_true",
+        help="Write user report in a table format. [default: %(default)s]",
+    )
+
+    parser.add_argument(
         "-v",
         "--verbose",
         action="store_true",
@@ -96,22 +111,74 @@ def get_parser():
 
     return parser
 
+def parse_arguments():
+    """
+    Parse command-line arguments using the get_parser function.
+
+    Returns:
+        argparse.Namespace: A namespace object containing the parsed arguments.
+    """
+    parser = get_parser()
+    args = parser.parse_args()
+    return args
+
+def validate_dates(args, parser):
+    """
+    Validate the start and end dates and update them based on provided days.
+
+    Args:
+        args (argparse.Namespace): A namespace object containing the parsed arguments.
+        parser (argparse.ArgumentParser): The ArgumentParser object used for error handling.
+    """
+    # -- check at least days or start-date is provided.
+    if not args.start_date and not args.days:
+        parser.error("Either --start-date or -d/-days option must be provided.")
+
+    # -- convert days
+    if args.days:
+        end_date = datetime.now()
+        start_date = end_date - timedelta(days=args.days)
+        args.start_date = start_date.strftime('%Y%m%d')
+        args.end_date = end_date.strftime('%Y%m%d')
+
+    # -- check if start and end dates are provided correctly
+    if args.start_date and not args.end_date:
+        parser.error("End date is required if start date is provided.")
+    if args.end_date and not args.start_date:
+        parser.error("Start date is required if end date is provided.")
+
+    # -- check if end-time is bigger than start-time
+    if args.start_date and args.end_date:
+        start_date_dt = datetime.strptime(args.start_date, "%Y%m%d")
+        end_date_dt = datetime.strptime(args.end_date, "%Y%m%d")
+        if end_date_dt <= start_date_dt:
+            parser.error("End date must be greater than start date.")
+
+def run_qhist(args):
+    """
+    Run QhistRunner and generate the report.
+
+    Args:
+        args (argparse.Namespace): A namespace object containing the parsed arguments.
+    """
+    runner = QhistRunner(args.start_date, args.end_date, args.filename, args.user)
+    result = runner.run_shell_code(args.verbose)
+
+    jobs = JobsSummary(args.filename)
+    jobs.dask_user_report(args.table)
+
+    if args.user == "all":
+        report = "users_" + args.start_date + "-" + args.end_date + ".txt"
+        logging.info(f"All users report is saved in {report}")
+        jobs.dask_csg_report(report)
+
 
 def main():
     """
     Main function for extracting Dask job statistics.
     """
 
-    parser = get_parser()
-    args = parser.parse_args()
-
-    # Check if start and end dates are provided correctly
-    if args.start_date and not args.end_date:
-        parser.error("End date is required if start date is provided.")
-    if args.end_date and not args.start_date:
-        parser.error("Start date is required if end date is provided.")
-    if not args.start_date and not args.d:
-        raise ValueError("Either start-date or -d option must be provided.")
+    args = parse_arguments()
 
     if args.verbose:
         logging.basicConfig(level=logging.DEBUG, format="%(message)s")
@@ -122,17 +189,8 @@ def main():
         logging.info(f"\tuser       : {args.user}")
         logging.info(f"\tfilename   : {args.filename}")
 
-    runner = QhistRunner(args.start_date, args.end_date, args.filename, args.user)
-    result = runner.run_shell_code()
-
-    jobs = JobsSummary(args.filename)
-    jobs.dask_user_report()
-
-    if args.user == "all":
-        report = "users_" + args.start_date + "-" + args.end_date + ".txt"
-        logging.info(f"All users report is saved in {report}")
-        jobs.dask_csg_report(report)
-
+    validate_dates(args, get_parser())
+    run_qhist(args)
 
 if __name__ == "__main__":
     main()
