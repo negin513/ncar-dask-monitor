@@ -3,6 +3,7 @@
 
 
 This Python package summarizes the memory usage history of Dask workers in NCAR clusters and provides insights to both individual users and system administrators, allowing them to better understand memory usage patterns and optimize resource allocation.
+
 Users can track memory usage for individual or all users over a given period, gaining insights for better resource allocation and workflow optimization.
 
 ## Installation
