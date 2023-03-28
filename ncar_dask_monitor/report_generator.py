@@ -114,9 +114,10 @@ class JobsSummary:
         # -- select dask-jobs
         dask_jobs = jobs[jobs["Job Name"].str.contains("dask-worker.*")]
         # dask_jobs = jobs[jobs["Job Name"] == "dask-worker"]
-        print (dask_jobs)
+
         # remove all rows with "economy" in the "queue" column
         dask_jobs = dask_jobs[dask_jobs["Queue"] != "economy"]
+
         data_types = {
             "Req Mem (GB)": float,
             "Used Mem(GB)": float,
@@ -218,6 +219,6 @@ class JobsSummary:
         )
         dj_80 = dj_80.rename(columns={"Job ID": "Dask job count"})
         pd.options.display.float_format = "{:.2f}".format
-        print(dj_80.sort_values(by=["Unused Core-Hour (GB.hr)"], ascending=False))
+        print(dj_80.sort_values(by=["Unused Core-Hour (GB.hr)"], ascending=False).to_markdown())
         if save_csv:
             dj_80.to_csv(report, index=False)
