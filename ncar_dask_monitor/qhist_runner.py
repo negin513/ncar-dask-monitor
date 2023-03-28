@@ -32,7 +32,6 @@ class QhistRunner:
             str: The shell command.
         """
         #Job ID,Queue,Nodes,NCPUs,NGPUs,Req Mem (GB),Used Mem(GB),Job Submit,Job Start,Job End,Walltime (h),Exit Status,Job Name
-
         qformat = "'user,queue,numnodes,numcpus,reqmem,memory,start,end,elapsed,walltime,waittime,name,status'"
 
         if self.username and self.username != 'all':
@@ -51,14 +50,19 @@ class QhistRunner:
         command = ''.join(str(i) for i in command)
         return command
 
-    def run_shell_code(self):
+    def run_shell_code(self, verbose=False):
         """
         Runs a shell command to extract data from a file.
+
+        Args:
+            verbose (bool, optional): Whether to display the qhist command.
 
         Returns:
             str: The result of the shell command.
         """
         command = self._create_command()
+        if verbose:
+            print ('>> ', command)
         process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         stdout, stderr = process.communicate()
         if stderr:

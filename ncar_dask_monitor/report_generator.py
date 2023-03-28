@@ -114,7 +114,9 @@ class JobsSummary:
         # -- select dask-jobs
         dask_jobs = jobs[jobs["Job Name"].str.contains("dask-worker.*")]
         # dask_jobs = jobs[jobs["Job Name"] == "dask-worker"]
-
+        print (dask_jobs)
+        # remove all rows with "economy" in the "queue" column
+        dask_jobs = dask_jobs[dask_jobs["Queue"] != "economy"]
         data_types = {
             "Req Mem (GB)": float,
             "Used Mem(GB)": float,
@@ -135,12 +137,13 @@ class JobsSummary:
         )
         self.dask_jobs = dask_jobs
 
-    def dask_user_report(self, table=False):
+    def dask_user_report(self, table=False) -> None:
         """
         Print memory usage summary of Dask workers.
 
         Parameters:
-            table (bool, optional):
+        -----------
+        table (bool, optional):
                 If True, prints the summary statistics in a tabular form. Defaults to False.
         """
 

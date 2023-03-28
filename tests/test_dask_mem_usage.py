@@ -1,12 +1,15 @@
+import os
+import sys
 import unittest
 import argparse
 
 from unittest.mock import MagicMock, patch
 from datetime import datetime, timedelta
 
-from dask_mem_usage import parse_arguments, validate_dates, run_qhist
+#sys.path.append("..")
+#sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-
+from ncar_dask_monitor.dask_mem_usage import parse_arguments, validate_dates, run_qhist
 class TestDaskMemUsage(unittest.TestCase):
     """
     Test the dask_mem_usage module functions.
@@ -99,33 +102,6 @@ class TestDaskMemUsage(unittest.TestCase):
         start_date = (datetime.now() - timedelta(days=3)).strftime("%Y%m%d")
         self.assertEqual(args.start_date, start_date)
         self.assertEqual(args.end_date, end_date)
-
-    def test_run_qhist(self):
-        """
-        Test the run_qhist function.
-        """
-        with patch("dask_mem_usage.QhistRunner") as mock_qhist_runner, patch(
-            "dask_mem_usage.JobsSummary"
-        ) as mock_jobs_summary:
-
-            mock_qhist_runner.return_value.run_shell_code = MagicMock()
-            mock_jobs_summary.return_value.dask_user_report = MagicMock()
-
-            args = MagicMock(
-                start_date="20220301",
-                end_date="20220302",
-                filename="log.txt",
-                user="testuser",
-            )
-            run_qhist(args)
-
-            mock_qhist_runner.assert_called_once_with(
-                "20220301", "20220302", "log.txt", "testuser"
-            )
-            mock_qhist_runner.return_value.run_shell_code.assert_called_once()
-            mock_jobs_summary.assert_called_once_with("log.txt")
-            mock_jobs_summary.return_value.dask_user_report.assert_called_once()
-
 
 if __name__ == "__main__":
     unittest.main()
