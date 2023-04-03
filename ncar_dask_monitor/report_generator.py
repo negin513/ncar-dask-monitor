@@ -90,14 +90,16 @@ class JobsSummary:
         filename (str): The name of the file to extract data from.
     """
 
-    def __init__(self, filename):
+    def __init__(self, filename, worker):
         """
         Initializes a JobsSummary object.
 
         Args:
             filename (str): The name of the file to extract data from.
+            worker (str): Name of the Dask job workers.
         """
         self.filename = filename
+        self.worker = worker
         self._read_all_jobs()
 
     def _read_all_jobs(self) -> None:
@@ -112,8 +114,10 @@ class JobsSummary:
             sys.exit()
 
         # -- select dask-jobs
-        dask_jobs = jobs[jobs["Job Name"].str.contains("dask-worker.*")]
-        # dask_jobs = jobs[jobs["Job Name"] == "dask-worker"]
+        print (self.worker)
+        dask_jobs = jobs[jobs["Job Name"].str.contains(self.worker)]
+        #dask_jobs = jobs[jobs["Job Name"].str.contains("dask-worker*")]
+        ## dask_jobs = jobs[jobs["Job Name"] == "dask-worker"]
 
         # remove all rows with "economy" in the "queue" column
         dask_jobs = dask_jobs[dask_jobs["Queue"] != "economy"]
