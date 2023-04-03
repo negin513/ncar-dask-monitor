@@ -25,6 +25,7 @@ venv.bak/
 
 # Logs and other generated files
 *.log
+!qhist.log
 *.swp
 *.swo
 *.swn
