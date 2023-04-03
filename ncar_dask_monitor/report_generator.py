@@ -88,15 +88,16 @@ class JobsSummary:
 
     Attributes:
         filename (str): The name of the file to extract data from.
+        worker (str, optional): Name of the Dask job workers.
     """
 
-    def __init__(self, filename, worker):
+    def __init__(self, filename, worker='dask-worker*'):
         """
         Initializes a JobsSummary object.
 
         Args:
             filename (str): The name of the file to extract data from.
-            worker (str): Name of the Dask job workers.
+            worker (str, optional): Name of the Dask job workers.
         """
         self.filename = filename
         self.worker = worker
@@ -114,7 +115,6 @@ class JobsSummary:
             sys.exit()
 
         # -- select dask-jobs
-        print (self.worker)
         dask_jobs = jobs[jobs["Job Name"].str.contains(self.worker)]
         #dask_jobs = jobs[jobs["Job Name"].str.contains("dask-worker*")]
         ## dask_jobs = jobs[jobs["Job Name"] == "dask-worker"]

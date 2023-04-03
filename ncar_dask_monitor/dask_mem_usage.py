@@ -27,8 +27,8 @@ from datetime import datetime, timedelta
 
 import pandas as pd
 
-from qhist_runner import QhistRunner
-from report_generator import JobsSummary
+from .qhist_runner import QhistRunner
+from .report_generator import JobsSummary
 
 
 def get_parser():
