@@ -103,6 +103,16 @@ def get_parser():
     )
 
     parser.add_argument(
+        "--worker",
+        type=str,
+        dest="worker",
+        required=False,
+        action="store",
+        default="dask-worker*",
+        help="Name of the Dask jobs if other than default. [default: %(default)s]",
+    )
+
+    parser.add_argument(
         "-v",
         "--verbose",
         action="store_true",
@@ -164,7 +174,7 @@ def run_qhist(args):
     runner = QhistRunner(args.start_date, args.end_date, args.filename, args.user)
     result = runner.run_shell_code(args.verbose)
 
-    jobs = JobsSummary(args.filename)
+    jobs = JobsSummary(args.filename, args.worker)
     jobs.dask_user_report(args.table)
 
     if args.user == "all":
