@@ -107,7 +107,13 @@ class JobsSummary:
         """
         Read the qhist file and select Dask jobs only.
         """
-        jobs = pd.read_csv(self.filename)
+        date_columns = ['Job Start', 'Job End']
+        date_format = '%Y-%m-%dT%H:%M:%S'
+
+        jobs = pd.read_csv(self.filename, na_values='-',parse_dates=date_columns, date_parser=lambda x:
+                pd.to_datetime(x, format=date_format))
+
+        jobs['Elapsed (h)'] = (jobs['Job End'] - jobs['Job Start']).dt.total_seconds() / 3600
 
         # -- check if there is any jobs for this user
         if len(jobs) == 0:
@@ -116,11 +122,14 @@ class JobsSummary:
 
         # -- select dask-jobs
         dask_jobs = jobs[jobs["Job Name"].str.contains(self.worker)]
+
         #dask_jobs = jobs[jobs["Job Name"].str.contains("dask-worker*")]
         ## dask_jobs = jobs[jobs["Job Name"] == "dask-worker"]
 
         # remove all rows with "economy" in the "queue" column
         dask_jobs = dask_jobs[dask_jobs["Queue"] != "economy"]
+
+        dask_jobs= dask_jobs.dropna()
 
         data_types = {
             "Req Mem (GB)": float,
@@ -225,4 +234,4 @@ class JobsSummary:
         pd.options.display.float_format = "{:.2f}".format
         print(dj_80.sort_values(by=["Unused Core-Hour (GB.hr)"], ascending=False).to_markdown())
         if save_csv:
-            dj_80.to_csv(report, index=False)
+            dj_80.to_csv(report)

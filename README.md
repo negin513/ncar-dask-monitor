@@ -14,6 +14,8 @@ pip install git+https://github.com/negin513/dask-monitor.git
 ```
 `dask_mem_usage` will now be added to your PATH.
 
+Alternatively you can use `run_dask_mem_usage.py` in the top directory without installing. 
+
 ## Usage
 The following options are available within `dask_mem_usage`:
 ```
@@ -30,13 +32,13 @@ user and date range.
 -------------------------------------------------------------------
 To see the available options:
 
-    ./dask_mem_usage.py --help
+    dask_mem_usage --help
 
 Examples:
-    ./dask_mem_usage.py --start_date 20230304 --end_date 20230314
+    dask_mem_usage --start_date 20230304 --end_date 20230314
 
 or
-    ./dask_mem_usage.py --day 10 --user all --table
+    dask_mem_usage --day 10 --user all --table
 
 options:
   -h, --help            show this help message and exit
@@ -53,7 +55,7 @@ options:
 
 For one user:
 ```
-./dask_mem_usage.py --start_date 20230301 --end_date 20230314 --user $USER
+dask_mem_usage --start_date 20230301 --end_date 20230314 --user $USER
 ```
 
 For one user, the sample output looks like:
@@ -96,7 +98,7 @@ The output can be extracted in a table format using `--table` argument.
 To see all users for the past 30 days:
 
 ```
-./dask_mem_usage.py --user all -d 30 --table
+dask_mem_usage --user all -d 30 --table
 
 or
 
