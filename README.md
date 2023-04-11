@@ -6,20 +6,17 @@ This Python package summarizes the memory usage history of Dask workers in NCAR 
 
 Users can track memory usage for individual or all users over a given period, gaining insights for better resource allocation and workflow optimization.
 
-## Installation
+## How to use this script?
 
-To install the package directly from github:
+First, clone this repository:
 ```
-pip install git+https://github.com/negin513/dask-monitor.git
+git clone https://github.com/negin513/ncar-dask-monitor.git
 ```
-`dask_mem_usage` will now be added to your PATH.
+Next, you can run the ./run_dask_mem_usage.py from the top directory.
 
-Alternatively you can use `run_dask_mem_usage.py` in the top directory without installing. 
-
-## Usage
 The following options are available within `dask_mem_usage`:
 ```
-usage: dask_mem_usage [-h] [-s START_DATE | -d DAYS] [-e END_DATE] [-u USER] [--filename FILENAME] [-t] [-v]
+usage: ./run_dask_mem_usage.py [-h] [-s START_DATE | -d DAYS] [-e END_DATE] [-u USER] [--filename FILENAME] [-t] [-v]
 
 |------------------------------------------------------------------|
 |---------------------  Instructions  -----------------------------|
@@ -32,13 +29,13 @@ user and date range.
 -------------------------------------------------------------------
 To see the available options:
 
-    dask_mem_usage --help
+    ./run_dask_mem_usage.py --help
 
 Examples:
-    dask_mem_usage --start_date 20230304 --end_date 20230314
+    ./run_dask_mem_usage.py --start_date 20230304 --end_date 20230314
 
 or
-    dask_mem_usage --day 10 --user all --table
+    ./run_dask_mem_usage.py --day 10 --user all --table
 
 options:
   -h, --help            show this help message and exit
@@ -55,7 +52,7 @@ options:
 
 For one user:
 ```
-dask_mem_usage --start_date 20230301 --end_date 20230314 --user $USER
+./run_dask_mem_usage.py --start_date 20230301 --end_date 20230314 --user $USER
 ```
 
 For one user, the sample output looks like:
@@ -98,53 +95,52 @@ The output can be extracted in a table format using `--table` argument.
 To see all users for the past 30 days:
 
 ```
-dask_mem_usage --user all -d 30 --table
+./run_dask_mem_usage.py --user all -d 30 --table
 
 or
 
-dask_mem_usage --user all -d 30
+./run_dask_mem_usage.py --user all -d 30
 ```
 
 ```
-Memory usage summary of Dask workers
-Number of jobs :  85548
-Unused Mem (%):
-    mean: 87.03
-    min: 0.00
-    max: 100.00
-Req Mem (GB):
-    mean: 27.72
-    min: 1.00
-    max: 300.00
-Used Mem(GB):
-    mean: 3.31
-    min: 0.00
-    max: 115.70
-Elapsed (h):
-    mean: 1.19
-    min: 0.00
-    max: 23.99
-Walltime (h):
-    mean: 3.64
-    min: 0.17
-    max: 24.00
-------------------------
-Summary Overview:
-Unused Mem (%) Jobs %
-         >=75% 76.05%
-        50-75% 10.86%
-        25-50%  7.31%
-          <25%  5.77%
-           Req Mem (GB)  Unused Mem (GB)  Unused Mem (%)  Elapsed (h)  Dask job count  Unused Core-Hour (GB.hr)
-User                                                                                                           
-fredc             31.68            27.50           83.43         1.01           19212                 534807.90
-jvance            25.00            24.15           96.61         2.32            9520                 533713.30
-islas             19.44            14.02           71.69         8.67            2133                 259401.92
-wchapman          25.00            21.36           85.45         1.25            5303                 141648.71
-burcuboza         25.00            23.76           95.04         0.33           17070                 133745.83
-...                 ...              ...             ...          ...             ...                       ...
-dgagne            10.00             6.47           64.69         1.97              16                    203.90
-apauling         200.00           185.28           92.64         0.15               6                    166.75
-vanderwb           4.00             1.20           30.00         0.63             100                     75.72
-juliob            20.00            19.91           99.54         0.04              23                     16.72
+      Memory usage summary of dask workers                                                   
+                            Unused Mem (%) Req Mem (GB) Used Mem(GB) Elapsed (h) Walltime (h)
+count                             81482.00     81482.00     81482.00    81482.00     81482.00
+mean                                 87.87        25.00         2.96        1.10         3.35
+min                                   0.00         2.00         0.00        0.00         0.08
+max                                 100.00       466.00       241.20       24.97        24.00
+| User        |   Req Mem (GB) |   Unused Mem (GB) |   Unused Mem (%) |   Elapsed (h) |   Dask job count |   Unused Core-Hour (GB.hr) |
+|:------------|---------------:|------------------:|-----------------:|--------------:|-----------------:|---------------------------:|
+| jvance      |       25       |          23.9262  |          95.7049 |    1.98803    |             8862 |              421530        |
+| burcuboza   |       24.9573  |          24.078   |          96.4796 |    0.546916   |            23425 |              308475        |
+| fredc       |       22.749   |          18.4449  |          79.406  |    1.08334    |            13194 |              263643        |
+| mauricio    |       31.8962  |          24.276   |          75.7924 |    0.859131   |             5088 |              106117        |
+| islas       |       18.4071  |          14.2842  |          78.1084 |    8.11669    |              904 |              104810        |
+| wmikim      |       35.1724  |          32.6683  |          91.9319 |    5.37088    |              580 |              101765        |
+| wchapman    |       25       |          20.2686  |          81.0745 |    2.12573    |             1950 |               84016.9      |
+| mneedham    |       25       |          22.0855  |          88.3418 |    5.23524    |              440 |               50874        |
+| rudradutt   |       37.368   |          30.16    |          78.4714 |    1.16754    |             1269 |               44685.3      |
+| kristenk    |       35.1218  |          25.1782  |          67.7205 |    2.56838    |              657 |               42486.4      |
+| jaye        |       28.6725  |          22.3102  |          79.7864 |    0.550789   |             3047 |               37442.3      |
+| shartke     |       10       |           7.6948  |          76.948  |    2.57047    |             1653 |               32695.1      |
+| pmongwe     |       50       |          49.0363  |          98.0725 |    7.53403    |               80 |               29555.3      |
+| fhanifah    |       26.1434  |          24.4692  |          93.5981 |    0.198449   |             5936 |               28824.5      |
+| djk2120     |       19.7382  |          18.1682  |          92.7479 |    1.4803     |              955 |               25684.2      |
+| sshams      |       13.1268  |           8.35135 |          50.4845 |    1.46894    |             1735 |               21284.4      |
+| yeager      |       19.5004  |          17.8849  |          91.7998 |    0.857255   |             1301 |               19946.8      |
+| cbecker     |       49.1151  |          25.701   |          60.1684 |    0.751933   |              782 |               15112.5      |
+| zephyrs     |       25       |          22.7422  |          90.9689 |    3.61504    |              180 |               14798.5      |
+
 ```
+
+Alternatively, you can install this package using pip as outlined in the following and use `dask_mem_usage`. 
+
+## Installation
+
+To install the package directly from github:
+```
+pip install git+https://github.com/negin513/dask-monitor.git
+```
+`dask_mem_usage` will now be added to your PATH.
+
+Alternatively you can use `run_dask_mem_usage.py` in the top directory without installing. 
