@@ -107,7 +107,13 @@ class JobsSummary:
         """
         Read the qhist file and select Dask jobs only.
         """
-        jobs = pd.read_csv(self.filename, na_values='-')
+        date_columns = ['Job Start', 'Job End']
+        date_format = '%Y-%m-%dT%H:%M:%S'
+
+        jobs = pd.read_csv(self.filename, na_values='-',parse_dates=date_columns, date_parser=lambda x:
+                pd.to_datetime(x, format=date_format))
+
+        jobs['Elapsed (h)'] = (jobs['Job End'] - jobs['Job Start']).dt.total_seconds() / 3600
 
         # -- check if there is any jobs for this user
         if len(jobs) == 0:
