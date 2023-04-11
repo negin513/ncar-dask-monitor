@@ -234,4 +234,4 @@ class JobsSummary:
         pd.options.display.float_format = "{:.2f}".format
         print(dj_80.sort_values(by=["Unused Core-Hour (GB.hr)"], ascending=False).to_markdown())
         if save_csv:
-            dj_80.to_csv(report, index=False)
+            dj_80.to_csv(report)
