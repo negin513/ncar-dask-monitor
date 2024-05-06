@@ -172,8 +172,6 @@ def validate_dates(args, parser):
         if end_date_dt <= start_date_dt:
             parser.error("End date must be greater than start date.")
 
-    return start_date_dt, end_date_dt
-
 def run_qhist(args):
     """
     Run QhistRunner and generate the report.
@@ -199,7 +197,9 @@ def main():
     """
 
     args = parse_arguments()
-    start_date_dt, end_date_dt = validate_dates(args, get_parser())
+    validate_dates(args, get_parser())
+    start_date_dt = datetime.strptime(args.start_date, "%Y%m%d")
+    end_date_dt = datetime.strptime(args.end_date, "%Y%m%d")
 
     if args.verbose:
         logging.basicConfig(level=logging.DEBUG, format="%(message)s")
