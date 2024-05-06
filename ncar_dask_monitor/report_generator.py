@@ -123,7 +123,7 @@ class JobsSummary:
 
         jobs = pd.read_csv(self.filename, na_values='-',parse_dates=date_columns, date_format=date_format)
         jobs = jobs.rename(columns={"Avg CPU (%)": "CPU (%)"})
-        print (jobs)
+        #print (jobs)
 
 
         jobs['Elapsed (h)'] = (jobs['Job End'] - jobs['Job Start']).dt.total_seconds() / 3600
