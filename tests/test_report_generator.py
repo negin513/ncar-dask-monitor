@@ -28,6 +28,7 @@ class TestReportGenerator(unittest.TestCase):
             "Used Mem(GB)": {
                 "count": 5.0,
                 "mean": 3.2,
+                'median': 3.0,
                 "min": 1.0,
                 "max": 5.0,
             }
@@ -60,7 +61,7 @@ class TestJobsSummary(unittest.TestCase):
             jobs_summary.dask_user_report(table=True)
             self.assertEqual(mock_print.call_count, 1)
             jobs_summary.dask_user_report(table=False)
-            self.assertEqual(mock_print.call_count, 26)
+            self.assertEqual(mock_print.call_count, 32)
 
     def test_JobsSummary_dask_csg_report(self):
         jobs_summary = JobsSummary(self.csv_file)
