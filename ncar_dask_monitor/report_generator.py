@@ -169,9 +169,7 @@ class JobsSummary:
 
         if verbose: 
             print ('---------------')
-            print (dask_jobs.describe())
-            pd.set_option('display.max_rows', None)
-            print (dask_jobs)
+            print (dask_jobs.to_string())
 
         self.dask_jobs = dask_jobs
 
