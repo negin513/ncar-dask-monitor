@@ -93,7 +93,7 @@ class JobsSummary:
         worker (str, optional): Name of the Dask job workers.
     """
 
-    def __init__(self, filename, worker='dask*',verbose=False):
+    def __init__(self, filename, worker='*dask*',verbose=False):
         """
         Initializes a JobsSummary object.
 
@@ -202,14 +202,14 @@ class JobsSummary:
         df = pd.DataFrame(result_dict)
         # Create a multi-level column header
         header = pd.MultiIndex.from_product(
-            [["Resource usage summary of dask workers"], df.columns]
+            [["Resource Usage Summary of Dask workers"], df.columns]
         )
         df.columns = header
         # -- two digits of precision
         #df = df.applymap(lambda x: "{:.2f}".format(x))
         #df = df.apply(lambda x: x.map(lambda y: "{:.2f}".format(y)))
 
-        print("Resource usage summary of Dask workers")
+        print("------------------------")
         print("Number of Dask jobs : ", len(self.dask_jobs))
 
         if table:
