@@ -182,7 +182,7 @@ def run_qhist(args):
     runner = QhistRunner(args.start_date, args.end_date, args.filename, args.user)
     result = runner.run_shell_code(args.verbose)
 
-    jobs = JobsSummary(args.filename, args.worker)
+    jobs = JobsSummary(args.filename, args.worker,args.verbose)
     jobs.dask_user_report(args.table,args.verbose)
 
     if args.user == "all":

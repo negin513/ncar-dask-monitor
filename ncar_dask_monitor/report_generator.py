@@ -93,7 +93,7 @@ class JobsSummary:
         worker (str, optional): Name of the Dask job workers.
     """
 
-    def __init__(self, filename, worker='dask-worker*'):
+    def __init__(self, filename, worker='dask*',verbose=False):
         """
         Initializes a JobsSummary object.
 
@@ -103,9 +103,9 @@ class JobsSummary:
         """
         self.filename = filename
         self.worker = worker
-        self._read_all_jobs()
+        self._read_all_jobs(verbose)
 
-    def _read_all_jobs(self) -> None:
+    def _read_all_jobs(self,verbose=False) -> None:
         """
         Read the qhist file and select Dask jobs only.
         """
@@ -166,6 +166,13 @@ class JobsSummary:
         dask_jobs["Unused Mem (%)"] = (
             dask_jobs["Unused Mem (GB)"] / dask_jobs["Req Mem (GB)"] * 100.0
         )
+
+        if verbose: 
+            print ('---------------')
+            print (dask_jobs.describe())
+            pd.set_option('display.max_rows', None)
+            print (dask_jobs)
+
         self.dask_jobs = dask_jobs
 
     def dask_user_report(self, table=False,verbose=False) -> None:
@@ -192,17 +199,17 @@ class JobsSummary:
             field_dict = compute_summary_stats(self.dask_jobs, field,verbose)
             result_dict.update(field_dict)
 
-        if table:
-            df = pd.DataFrame(result_dict)
-            # Create a multi-level column header
-            header = pd.MultiIndex.from_product(
-                [["Resource usage summary of dask workers"], df.columns]
-            )
-            df.columns = header
-            # -- two digits of precision
-            #df = df.applymap(lambda x: "{:.2f}".format(x))
-            #df = df.apply(lambda x: x.map(lambda y: "{:.2f}".format(y)))
+        df = pd.DataFrame(result_dict)
+        # Create a multi-level column header
+        header = pd.MultiIndex.from_product(
+            [["Resource usage summary of dask workers"], df.columns]
+        )
+        df.columns = header
+        # -- two digits of precision
+        #df = df.applymap(lambda x: "{:.2f}".format(x))
+        #df = df.apply(lambda x: x.map(lambda y: "{:.2f}".format(y)))
 
+        if table:
             print(df.apply(lambda x: x.map(lambda y: "{:.2f}".format(y))))
 
         else:
@@ -222,6 +229,7 @@ class JobsSummary:
             labels = ["<25%", "25-50%", "50-75%", ">=75%"]
             bin_summary(self.dask_jobs, "Unused Mem (%)", bins, labels)
             bin_summary(self.dask_jobs, "CPU (%)", bins, labels)
+
 
     def dask_csg_report(self, report: str, save_csv: bool = True) -> None:
         """
