@@ -59,9 +59,8 @@ class TestDaskMemUsage(unittest.TestCase):
 
         validate_dates(args, parser)
 
-        parser.error.assert_called_once_with(
-            "End date is required if start date is provided."
-        )
+        today_date = datetime.today().strftime("%Y%m%d")
+        self.assertEqual(args.end_date, today_date)
 
     def test_end_date_less_than_start_date(self):
         """
