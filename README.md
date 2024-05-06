@@ -2,7 +2,7 @@
 ![CI](https://img.shields.io/github/actions/workflow/status/negin513/ncar-dask-monitor/main.yml?label=CI&logo=GitHub&style=flat-square)
 
 
-This Python package summarizes the memory usage history of Dask workers in NCAR clusters and provides insights to both individual users and system administrators, allowing them to better understand memory usage patterns and optimize resource allocation.
+This Python package summarizes the resource usage history of Dask workers in NCAR clusters and provides insights to both individual users and system administrators, allowing them to better understand memory usage patterns and optimize resource allocation.
 
 Users can track memory usage for individual or all users over a given period, gaining insights for better resource allocation and workflow optimization.
 
@@ -16,7 +16,7 @@ Next, you can run the ./run_dask_mem_usage.py from the top directory.
 
 The following options are available within `dask_mem_usage`:
 ```
-usage: ./run_dask_mem_usage.py [-h] [-s START_DATE | -d DAYS] [-e END_DATE] [-u USER] [--filename FILENAME] [-t] [-v]
+usage: ./dask_resource_monitor [-h] [-s START_DATE | -d DAYS] [-e END_DATE] [-u USER] [--filename FILENAME] [-t] [-v]
 
 |------------------------------------------------------------------|
 |---------------------  Instructions  -----------------------------|
@@ -29,13 +29,13 @@ user and date range.
 -------------------------------------------------------------------
 To see the available options:
 
-    ./run_dask_mem_usage.py --help
+    ./dask_resource_monitor--help
 
 Examples:
-    ./run_dask_mem_usage.py --start_date 20230304 --end_date 20230314
+    ./dask_resource_monitor --start_date 20230304 --end_date 20230314
 
 or
-    ./run_dask_mem_usage.py --day 10 --user all --table
+    ./dask_resource_monitor --day 10 --user all --table
 
 options:
   -h, --help            show this help message and exit
@@ -52,7 +52,7 @@ options:
 
 For one user:
 ```
-./run_dask_mem_usage.py --start_date 20230301 --end_date 20230314 --user $USER
+./dask_resource_monitor --start_date 20230301 --end_date 20230314 --user $USER
 ```
 
 For one user, the sample output looks like:
@@ -95,11 +95,11 @@ The output can be extracted in a table format using `--table` argument.
 To see all users for the past 30 days:
 
 ```
-./run_dask_mem_usage.py --user all -d 30 --table
-
+./dask_resource_monitor --user all -d 30 --table
+```
 or
-
-./run_dask_mem_usage.py --user all -d 30
+```
+./dask_resource_monitor --user all -d 30
 ```
 
 ```
@@ -141,6 +141,6 @@ To install the package directly from github:
 ```
 pip install git+https://github.com/negin513/dask-monitor.git
 ```
-`dask_mem_usage` will now be added to your PATH.
+`dask_resource_monitor` will now be added to your PATH.
 
-Alternatively you can use `run_dask_mem_usage.py` in the top directory without installing. 
+Alternatively, you can use `run_dask_mem_usage.py` in the top directory without installing it. 
