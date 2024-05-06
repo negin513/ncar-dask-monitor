@@ -59,7 +59,6 @@ def bin_summary(
     Returns:
         None: The function prints the percentage of the column in each bin.
     """
-    print ("------------------------")
     if bins is None:
         bins = [0, 25, 50, 75, 100]
 
