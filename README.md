@@ -1,4 +1,4 @@
-# Dask Memory Usage History
+# Dask Resources Monitor
 ![CI](https://img.shields.io/github/actions/workflow/status/negin513/ncar-dask-monitor/main.yml?label=CI&logo=GitHub&style=flat-square)
 
 
