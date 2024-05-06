@@ -26,7 +26,7 @@ class TestReportGenerator(unittest.TestCase):
     def test_compute_summary_stats(self):
         expected_result_dict = {
             "Used Mem(GB)": {
-                "count": 5.0,
+                #"count": 5.0,
                 "mean": 3.2,
                 'median': 3.0,
                 "min": 1.0,
@@ -59,9 +59,9 @@ class TestJobsSummary(unittest.TestCase):
         jobs_summary._read_all_jobs()
         with patch("builtins.print") as mock_print:
             jobs_summary.dask_user_report(table=True)
-            self.assertEqual(mock_print.call_count, 1)
+            self.assertEqual(mock_print.call_count, 3)
             jobs_summary.dask_user_report(table=False)
-            self.assertEqual(mock_print.call_count, 32)
+            self.assertEqual(mock_print.call_count, 34)
 
     def test_JobsSummary_dask_csg_report(self):
         jobs_summary = JobsSummary(self.csv_file)

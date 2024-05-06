@@ -31,7 +31,7 @@ def compute_summary_stats(df: pd.DataFrame, field_name: str, verbose=False) -> d
     min_val = summary.loc["min"]
     max_val = summary.loc["max"]
     result_dict = {
-            field_name: {"count": count, "mean": mean_val,"median":median_val, "min": min_val, "max": max_val}
+            field_name: { "mean": mean_val,"median":median_val, "min": min_val, "max": max_val}
     }
     if verbose:
         result_str = (
@@ -209,13 +209,14 @@ class JobsSummary:
         #df = df.applymap(lambda x: "{:.2f}".format(x))
         #df = df.apply(lambda x: x.map(lambda y: "{:.2f}".format(y)))
 
+        print("Resource usage summary of Dask workers")
+        print("Number of Dask jobs : ", len(self.dask_jobs))
+
         if table:
             print(df.apply(lambda x: x.map(lambda y: "{:.2f}".format(y))))
 
         else:
             # print the results
-            print("Resource usage summary of Dask workers")
-            print("Number of jobs : ", len(self.dask_jobs))
             for key, inner_dict in result_dict.items():
                 print(f"{key}:")
                 print(f"\tmean   : {inner_dict['mean']:.2f}")
