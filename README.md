@@ -6,104 +6,81 @@ This Python package summarizes the resource usage history of Dask workers in NCA
 
 Users can track memory usage for individual or all users over a given period, gaining insights for better resource allocation and workflow optimization.
 
+
+## How to use this script?
+
+You can use this script to see your dask resource usage over a period of time.
+
+For example:
+```
+# Check resource usage from March 1, 2023 to March 14, 2023
+dask_resource_monitor --start_date 20230301 --end_date 20230314 --table
+```
+
+or
+```
+# Monitor last 10 days of resource usage for the current user
+dask_resource_monitor -d 10 --table --user $USER
+```
+
+
+Here is an example summary output: 
+
+```
+       Resource usage summary of dask workers                                              
+                               Unused Mem (%) Req Mem (GB) Used Mem(GB) CPU (%) Elapsed (h)
+count                                  144.00       144.00       144.00  144.00      144.00
+mean                                    95.17        25.00         1.21   14.78        0.87
+median                                  98.40        25.00         0.40   12.00        1.01
+min                                     77.20        25.00         0.20    1.00        0.10
+max                                     99.20        25.00         5.70  100.00        1.03
+
+```
+
+
+
+To see all available options:
+
+```
+dask_resource_monitor --help
+```
+
+
+
+### Options
+The dask_resource_monitor script comes with several options:
+`-h`, `--help`: Show the help message and exit.
+`-s START_DATE`, `--start_date START_DATE`: The start date of the date range to extract.
+`-d DAYS`, `--days DAYS`: Number of previous days to extract.
+`-e END_DATE`, `--end_date END_DATE`: The end date of the date range to extract.
+`-u USER`, `--user USER`: Username of the user (default: Your username).
+`--filename FILENAME`: The name of the qhist output (default: log.txt).
+`-t`, `--table`: Write user report in a table format (default: False).
+`-v`, `--verbose`: Increase output verbosity.
+
+
+
 ## Installation
 
 To install the package directly from github:
 ```
-python3 -m pip install --user pipx
-python3 -m pipx ensurepath
 pipx install git+https://github.com/negin513/dask-monitor.git
 ```
-`dask_resource_monitor` will now be added to your PATH.
+`dask_resource_monitor` will now be added to your PATH. 
 
-Alternatively, you can use `run_dask_mem_usage.py` in the top directory without installing it. 
+-----
 
-
-## How to use this script?
-
+Alternatively, you can clone the repository and run `./dask_resource_monitory` from top level.  
 First, clone this repository:
 ```
 git clone https://github.com/negin513/ncar-dask-monitor.git
 ```
-Next, you can run the ./run_dask_mem_usage.py from the top directory.
+Next, you can run the `./dask_resource_monitor` from the top directory.
 
-The following options are available within `dask_mem_usage`:
-```
-usage: ./dask_resource_monitor [-h] [-s START_DATE | -d DAYS] [-e END_DATE] [-u USER] [--filename FILENAME] [-t] [-v]
 
-|------------------------------------------------------------------|
-|---------------------  Instructions  -----------------------------|
-|------------------------------------------------------------------|
-Extract Dask job statistics and memory usage.
 
-This script extracts job statistics from a qhist file for a specified
-user and date range.
 
--------------------------------------------------------------------
-To see the available options:
-
-    ./dask_resource_monitor--help
-
-Examples:
-    ./dask_resource_monitor --start_date 20230304 --end_date 20230314
-
-or
-    ./dask_resource_monitor --day 10 --user all --table
-
-options:
-  -h, --help            show this help message and exit
-  -s START_DATE, --start_date START_DATE
-                        The start date of the date range to extract.
-  -d DAYS, --days DAYS  number of previous days to extract.
-  -e END_DATE, --end_date END_DATE
-                        The end date of the date range to extract.
-  -u USER, --user USER  Username of the user! [default: negins]
-  --filename FILENAME   The name of the qhist output. [default: log.txt]
-  -t, --table           Write user report in a table format. [default: False]
-  -v, --verbose         Increase output verbosity.
-```
-
-For one user:
-```
-./dask_resource_monitor --start_date 20230301 --end_date 20230314 --user $USER
-```
-
-For one user, the sample output looks like:
-
-```
-Memory usage summary of Dask workers
-Number of jobs :  4169
-Unused Mem (%):
-    mean: 97.57
-    min: 63.20
-    max: 100.00
-Req Mem (GB):
-    mean: 25.00
-    min: 25.00
-    max: 25.00
-Used Mem(GB):
-    mean: 0.61
-    min: 0.00
-    max: 9.20
-Elapsed (h):
-    mean: 2.79
-    min: 0.00
-    max: 6.04
-Walltime (h):
-    mean: 6.00
-    min: 6.00
-    max: 6.00
-------------------------
-Summary Overview:
-Unused Mem (%) Jobs %
-         >=75% 99.50%
-        50-75%  0.50%
-        25-50%  0.00%
-          <25%  0.00%
-
-```
-The output can be extracted in a table format using `--table` argument.
-
+## Checking Resource Selections For all Users (CSG Team): 
 
 To see all users for the past 30 days:
 
@@ -146,6 +123,7 @@ max                                 100.00       466.00       241.20       24.97
 
 ```
 
-Alternatively, you can install this package using pip as outlined in the following and use `dask_mem_usage`. 
 
 
+
+Alternatively, you can use `run_dask_mem_usage.py` in the top directory without installing it. 
