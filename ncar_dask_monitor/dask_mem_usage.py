@@ -99,7 +99,7 @@ def get_parser():
         dest="table",
         required=False,
         action="store_true",
-        help="Only write a summary of user report in a table format. [default: %(default)s]",
+        help="Provide a summary of user report in a table format. [default: %(default)s]",
     )
 
     parser.add_argument(
