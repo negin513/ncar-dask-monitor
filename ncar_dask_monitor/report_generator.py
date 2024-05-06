@@ -110,8 +110,15 @@ class JobsSummary:
         date_columns = ['Job Start', 'Job End']
         date_format = '%Y-%m-%dT%H:%M:%S'
 
-        jobs = pd.read_csv(self.filename, na_values='-',parse_dates=date_columns, date_parser=lambda x:
-                pd.to_datetime(x, format=date_format))
+        # Check if the file is empty or not
+        with open(self.filename, 'r') as file:
+    	    content = file.read()
+
+        if "No jobs found matching search criteria" in content:
+            warnings.warn("No jobs found matching search criteria!")
+            sys.exit()
+
+        jobs = pd.read_csv(self.filename, na_values='-',parse_dates=date_columns, date_format=date_format)
 
         jobs['Elapsed (h)'] = (jobs['Job End'] - jobs['Job Start']).dt.total_seconds() / 3600
 
@@ -121,6 +128,11 @@ class JobsSummary:
             sys.exit()
 
         # -- select dask-jobs
+        #print (self.worker)
+        #nan_values = jobs["Job Name"].isna().sum()
+        #print("Number of NaN values in 'Job Name' column:", nan_values)
+        jobs.dropna(subset=["Job Name"], inplace=True)
+
         dask_jobs = jobs[jobs["Job Name"].str.contains(self.worker)]
 
         #dask_jobs = jobs[jobs["Job Name"].str.contains("dask-worker*")]
