@@ -27,16 +27,18 @@ def compute_summary_stats(df: pd.DataFrame, field_name: str, verbose=False) -> d
     summary = df[field_name].describe()
     count = summary.loc["count"]
     mean_val = summary.loc["mean"]
+    median_val = summary.loc["50%"]
     min_val = summary.loc["min"]
     max_val = summary.loc["max"]
     result_dict = {
-        field_name: {"count": count, "mean": mean_val, "min": min_val, "max": max_val}
+            field_name: {"count": count, "mean": mean_val,"median":median_val, "min": min_val, "max": max_val}
     }
     if verbose:
         result_str = (
-            f"Mean {field_name}: {mean_val:.2f}\n"
-            f"Min {field_name}: {min_val:.2f}\n"
-            f"Max {field_name}: {max_val:.2f}"
+            f"Mean {field_name}   : {mean_val:.2f}\n"
+            f"Median {field_name} : {median_val:.2f}\n"
+            f"Min {field_name}    : {min_val:.2f}\n"
+            f"Max {field_name}    : {max_val:.2f}"
         )
         print(result_str)
     return result_dict
@@ -57,6 +59,7 @@ def bin_summary(
     Returns:
         None: The function prints the percentage of the column in each bin.
     """
+    print ("------------------------")
     if bins is None:
         bins = [0, 25, 50, 75, 100]
 
@@ -76,7 +79,7 @@ def bin_summary(
     percentages_str = percentages.map("{:.2f}%".format)
 
     print(
-        percentages_str.rename_axis("Unused Mem (%)")
+        percentages_str.rename_axis(field_name)
         .reset_index(name="Jobs %")
         .to_string(index=False)
     )
@@ -110,8 +113,18 @@ class JobsSummary:
         date_columns = ['Job Start', 'Job End']
         date_format = '%Y-%m-%dT%H:%M:%S'
 
-        jobs = pd.read_csv(self.filename, na_values='-',parse_dates=date_columns, date_parser=lambda x:
-                pd.to_datetime(x, format=date_format))
+        # Check if the file is empty or not
+        with open(self.filename, 'r') as file:
+    	    content = file.read()
+
+        if "No jobs found matching search criteria" in content:
+            warnings.warn("No jobs found matching search criteria!")
+            sys.exit()
+
+        jobs = pd.read_csv(self.filename, na_values='-',parse_dates=date_columns, date_format=date_format)
+        jobs = jobs.rename(columns={"Avg CPU (%)": "CPU (%)"})
+        print (jobs)
+
 
         jobs['Elapsed (h)'] = (jobs['Job End'] - jobs['Job Start']).dt.total_seconds() / 3600
 
@@ -121,6 +134,11 @@ class JobsSummary:
             sys.exit()
 
         # -- select dask-jobs
+        #print (self.worker)
+        #nan_values = jobs["Job Name"].isna().sum()
+        #print("Number of NaN values in 'Job Name' column:", nan_values)
+        jobs.dropna(subset=["Job Name"], inplace=True)
+
         dask_jobs = jobs[jobs["Job Name"].str.contains(self.worker)]
 
         #dask_jobs = jobs[jobs["Job Name"].str.contains("dask-worker*")]
@@ -151,7 +169,7 @@ class JobsSummary:
         )
         self.dask_jobs = dask_jobs
 
-    def dask_user_report(self, table=False) -> None:
+    def dask_user_report(self, table=False,verbose=False) -> None:
         """
         Print memory usage summary of Dask workers.
 
@@ -166,40 +184,45 @@ class JobsSummary:
             "Unused Mem (%)",
             "Req Mem (GB)",
             "Used Mem(GB)",
+            "CPU (%)",
             "Elapsed (h)",
-            "Walltime (h)",
+            #"Walltime (h)",
         ]
         result_dict = {}
         for field in fields:
-            field_dict = compute_summary_stats(self.dask_jobs, field)
+            field_dict = compute_summary_stats(self.dask_jobs, field,verbose)
             result_dict.update(field_dict)
 
         if table:
             df = pd.DataFrame(result_dict)
             # Create a multi-level column header
             header = pd.MultiIndex.from_product(
-                [["Memory usage summary of dask workers"], df.columns]
+                [["Resource usage summary of dask workers"], df.columns]
             )
             df.columns = header
             # -- two digits of precision
-            df = df.applymap(lambda x: "{:.2f}".format(x))
-            print(df)
+            #df = df.applymap(lambda x: "{:.2f}".format(x))
+            #df = df.apply(lambda x: x.map(lambda y: "{:.2f}".format(y)))
+
+            print(df.apply(lambda x: x.map(lambda y: "{:.2f}".format(y))))
 
         else:
             # print the results
-            print("Memory usage summary of Dask workers")
+            print("Resource usage summary of Dask workers")
             print("Number of jobs : ", len(self.dask_jobs))
             for key, inner_dict in result_dict.items():
                 print(f"{key}:")
-                print(f"\tmean: {inner_dict['mean']:.2f}")
-                print(f"\tmin: {inner_dict['min']:.2f}")
-                print(f"\tmax: {inner_dict['max']:.2f}")
+                print(f"\tmean   : {inner_dict['mean']:.2f}")
+                print(f"\tmedian : {inner_dict['median']:.2f}")
+                print(f"\tmin    : {inner_dict['min']:.2f}")
+                print(f"\tmax    : {inner_dict['max']:.2f}")
 
             print("------------------------")
             print("Summary Overview:")
             bins = [0, 25, 50, 75, 100]
             labels = ["<25%", "25-50%", "50-75%", ">=75%"]
             bin_summary(self.dask_jobs, "Unused Mem (%)", bins, labels)
+            bin_summary(self.dask_jobs, "CPU (%)", bins, labels)
 
     def dask_csg_report(self, report: str, save_csv: bool = True) -> None:
         """

@@ -32,7 +32,7 @@ class QhistRunner:
             str: The shell command.
         """
         #Job ID,Queue,Nodes,NCPUs,NGPUs,Req Mem (GB),Used Mem(GB),Job Submit,Job Start,Job End,Walltime (h),Exit Status,Job Name
-        qformat = "'user,queue,numnodes,numcpus,reqmem,memory,start,end,elapsed,walltime,waittime,name,status'"
+        qformat = "'user,queue,numnodes,numcpus,reqmem,memory,start,end,elapsed,walltime,waittime,name,avgcpu,resources,status'"
 
         if self.username and self.username != 'all':
             command = "qhist --format="+qformat,\
