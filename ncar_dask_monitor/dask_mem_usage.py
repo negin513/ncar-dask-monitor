@@ -11,13 +11,13 @@ user and date range.
 -------------------------------------------------------------------
 To see the available options:
 
-    ./dask_mem_usage.py --help
+    ./dask_resource_monitor --help
 
 Examples:
-    ./dask_mem_usage.py --start_date 20230304 --end_date 20230314
+    ./dask_resource_monitor --start_date 20230304 --end_date 20230314
 
 or
-    ./dask_mem_usage.py --day 10 --user all --table
+    ./dask_resource_monitor --day 10 --user all --table
 
 """
 import argparse
@@ -185,7 +185,7 @@ def run_qhist(args):
     result = runner.run_shell_code(args.verbose)
 
     jobs = JobsSummary(args.filename, args.worker)
-    jobs.dask_user_report(args.table)
+    jobs.dask_user_report(args.table,args.verbose)
 
     if args.user == "all":
         report = "users_" + args.start_date + "-" + args.end_date + ".txt"
@@ -208,7 +208,7 @@ def main():
         logging.info(f"\tstart_date : {start_date_dt}")
         logging.info(f"\tend_date   : {end_date_dt}")
         logging.info(f"\tuser       : {args.user}")
-        logging.info(f"\tfilename   : {args.filename}")
+        #logging.info(f"\tfilename   : {args.filename}")
 
     run_qhist(args)
 
