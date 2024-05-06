@@ -140,9 +140,14 @@ def validate_dates(args, parser):
         args (argparse.Namespace): A namespace object containing the parsed arguments.
         parser (argparse.ArgumentParser): The ArgumentParser object used for error handling.
     """
+
+    # error checks:
     # -- check at least days or start-date is provided.
     if not args.start_date and not args.days:
         parser.error("Either --start-date or -d/-days option must be provided.")
+
+    if args.start_date and args.days:
+        parser.error("Please use either --start-date or -d/-days option.")
 
     # -- convert days
     if args.days:
@@ -153,7 +158,10 @@ def validate_dates(args, parser):
 
     # -- check if start and end dates are provided correctly
     if args.start_date and not args.end_date:
-        parser.error("End date is required if start date is provided.")
+        end_date = datetime.now()
+        args.end_date = end_date.strftime('%Y%m%d')
+        #parser.error("End date is required if start date is provided.")
+
     if args.end_date and not args.start_date:
         parser.error("Start date is required if end date is provided.")
 
@@ -163,6 +171,8 @@ def validate_dates(args, parser):
         end_date_dt = datetime.strptime(args.end_date, "%Y%m%d")
         if end_date_dt <= start_date_dt:
             parser.error("End date must be greater than start date.")
+
+    return start_date_dt, end_date_dt
 
 def run_qhist(args):
     """
@@ -189,17 +199,17 @@ def main():
     """
 
     args = parse_arguments()
+    start_date_dt, end_date_dt = validate_dates(args, get_parser())
 
     if args.verbose:
         logging.basicConfig(level=logging.DEBUG, format="%(message)s")
 
         logging.info("User selection:")
-        logging.info(f"\tstart_date : {args.start_date}")
-        logging.info(f"\tend_date   : {args.end_date}")
+        logging.info(f"\tstart_date : {start_date_dt}")
+        logging.info(f"\tend_date   : {end_date_dt}")
         logging.info(f"\tuser       : {args.user}")
         logging.info(f"\tfilename   : {args.filename}")
 
-    validate_dates(args, get_parser())
     run_qhist(args)
 
 if __name__ == "__main__":
