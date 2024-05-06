@@ -24,7 +24,7 @@ dask_resource_monitor -d 10 --table --user $USER
 ```
 
 
-Here is an example summary output: 
+Here is an example summary output using `--table`: 
 
 ```
        Resource usage summary of dask workers                                              
