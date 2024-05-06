@@ -6,6 +6,19 @@ This Python package summarizes the resource usage history of Dask workers in NCA
 
 Users can track memory usage for individual or all users over a given period, gaining insights for better resource allocation and workflow optimization.
 
+## Installation
+
+To install the package directly from github:
+```
+python3 -m pip install --user pipx
+python3 -m pipx ensurepath
+pipx install git+https://github.com/negin513/dask-monitor.git
+```
+`dask_resource_monitor` will now be added to your PATH.
+
+Alternatively, you can use `run_dask_mem_usage.py` in the top directory without installing it. 
+
+
 ## How to use this script?
 
 First, clone this repository:
@@ -135,12 +148,4 @@ max                                 100.00       466.00       241.20       24.97
 
 Alternatively, you can install this package using pip as outlined in the following and use `dask_mem_usage`. 
 
-## Installation
 
-To install the package directly from github:
-```
-pip install git+https://github.com/negin513/dask-monitor.git
-```
-`dask_resource_monitor` will now be added to your PATH.
-
-Alternatively, you can use `run_dask_mem_usage.py` in the top directory without installing it. 
