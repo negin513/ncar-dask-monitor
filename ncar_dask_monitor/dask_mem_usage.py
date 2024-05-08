@@ -20,6 +20,7 @@ or
     ./dask_resource_monitor --day 10 --user all --table
 
 """
+import os
 import argparse
 import logging
 from getpass import getuser
@@ -39,6 +40,8 @@ def get_parser():
         argparse.ArgumentParser: An ArgumentParser object for dask_mem_usage.
     """
     myname = getuser()
+    today_date = datetime.today().strftime('%Y%m%d')
+    default_filename = f"log_{today_date}.txt"
 
     parser = argparse.ArgumentParser(
         description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
@@ -90,7 +93,7 @@ def get_parser():
         dest="filename",
         required=False,
         action="store",
-        default="log.txt",
+        default=os.path.join("/glade/derecho/scratch",myname,default_filename),
         help="The name of the qhist output. [default: %(default)s]",
     )
 
@@ -179,6 +182,13 @@ def run_qhist(args):
     Args:
         args (argparse.Namespace): A namespace object containing the parsed arguments.
     """
+    # Check if the directory of args.filename exists, create it if it does not
+    filename_directory = os.path.dirname(args.filename)
+    if not os.path.exists(filename_directory):
+        os.makedirs(filename_directory)
+        if args.verbose:
+            logging.info(f"Created directory: {filename_directory}")
+
     runner = QhistRunner(args.start_date, args.end_date, args.filename, args.user)
     result = runner.run_shell_code(args.verbose)
 
@@ -200,6 +210,8 @@ def main():
     validate_dates(args, get_parser())
     start_date_dt = datetime.strptime(args.start_date, "%Y%m%d")
     end_date_dt = datetime.strptime(args.end_date, "%Y%m%d")
+
+
 
     if args.verbose:
         logging.basicConfig(level=logging.DEBUG, format="%(message)s")
