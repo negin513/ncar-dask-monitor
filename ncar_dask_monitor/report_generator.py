@@ -93,7 +93,7 @@ class JobsSummary:
         worker (str, optional): Name of the Dask job workers.
     """
 
-    def __init__(self, filename, worker='dask*',verbose=False):
+    def __init__(self, filename, worker='dask',verbose=False):
         """
         Initializes a JobsSummary object.
 
