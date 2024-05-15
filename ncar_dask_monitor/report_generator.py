@@ -257,7 +257,7 @@ class JobsSummary:
             }
         )
         # -- show all users with Unused Mem > 0%
-        dj_80 = grouped_dj[grouped_dj["Unused Mem (%)"] >= 0]
+        dj_80 = grouped_dj[grouped_dj["Unused Mem (%)"] >= 0].copy()
         dj_80["Unused Core-Hour (GB.hr)"] = (
             dj_80["Unused Mem (GB)"] * dj_80["Elapsed (h)"] * dj_80["Job ID"]
         )
