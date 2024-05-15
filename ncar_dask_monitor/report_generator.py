@@ -83,7 +83,6 @@ def bin_summary(
         .to_string(index=False)
     )
 
-
 class JobsSummary:
     """
     A class that reads a qhist log file, parse, provide some statistics on Dask jobs memory usage.
@@ -137,8 +136,11 @@ class JobsSummary:
         #nan_values = jobs["Job Name"].isna().sum()
         #print("Number of NaN values in 'Job Name' column:", nan_values)
         jobs.dropna(subset=["Job Name"], inplace=True)
-
-        dask_jobs = jobs[jobs["Job Name"].str.contains(self.worker)]
+        
+        if self.worker != '*':
+            dask_jobs = jobs[jobs["Job Name"].str.contains(self.worker)]
+        else:
+            dask_jobs = jobs
 
         #dask_jobs = jobs[jobs["Job Name"].str.contains("dask-worker*")]
         ## dask_jobs = jobs[jobs["Job Name"] == "dask-worker"]
