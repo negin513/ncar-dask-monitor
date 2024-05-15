@@ -111,7 +111,7 @@ def get_parser():
         dest="worker",
         required=False,
         action="store",
-        default="dask-worker*",
+        default="dask*",
         help="Name of the Dask jobs if other than default. [default: %(default)s]",
     )
 
