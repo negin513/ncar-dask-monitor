@@ -137,7 +137,7 @@ class JobsSummary:
         #print("Number of NaN values in 'Job Name' column:", nan_values)
         jobs.dropna(subset=["Job Name"], inplace=True)
         
-        if self.worker != '*':
+        if self.worker != 'all':
             dask_jobs = jobs[jobs["Job Name"].str.contains(self.worker)]
         else:
             dask_jobs = jobs
