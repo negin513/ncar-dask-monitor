@@ -263,7 +263,6 @@ class JobsSummary:
         )
         dj_80 = dj_80.rename(columns={"Job ID": "Dask job count"})
         pd.options.display.float_format = "{:.2f}".format
-        print ('\n')
         print(dj_80.sort_values(by=["Unused Core-Hour (GB.hr)"], ascending=False).to_string())
         #print(dj_80.sort_values(by=["Unused Core-Hour (GB.hr)"], ascending=False).to_markdown())
         
