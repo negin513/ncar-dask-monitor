@@ -108,7 +108,7 @@ def get_parser():
         dest="worker",
         required=False,
         action="store",
-        default="*",
+        default="all",
         help="Name of the jobs if other than default. [default: all]",
     )
 
