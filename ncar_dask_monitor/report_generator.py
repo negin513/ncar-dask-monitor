@@ -159,7 +159,8 @@ class JobsSummary:
 
         # -- check if there are any dask jobs for this user
         if len(dask_jobs) == 0:
-            warnings.warn("Warning! No Dask Jobs Found!")
+            #warnings.warn("Warning! No Dask Jobs Found!")
+            warnings.warn("Warning! No jobs found for this user and this time period!")
             sys.exit()
 
         dask_jobs["Unused Mem (GB)"] = (
@@ -173,8 +174,16 @@ class JobsSummary:
 
         if verbose: 
             print ('---------------')
-            pd.set_option('display.float_format', '{:.2f}'.format)
-            print (dask_jobs.to_string())
+            exclude_columns=['Job End', 'Job Start']
+            pd.set_option('display.max_rows', None)
+            print (dask_jobs.drop(columns=exclude_columns).to_string(float_format='{:,.2f}'.format))
+            #print (dask_jobs.drop(columns=exclude_columns))
+            print ('---------------')
+            print ('minimum memory % job:')
+            print (dask_jobs.drop(columns=exclude_columns).loc[dask_jobs['Unused Mem (%)'].idxmax()])
+            print ('maximum memory % job:')
+            print (dask_jobs.drop(columns=exclude_columns).loc[dask_jobs['Unused Mem (%)'].idxmin()])
+
 
         self.dask_jobs = dask_jobs
 
@@ -187,12 +196,17 @@ class JobsSummary:
         table (bool, optional):
                 If True, prints the summary statistics in a tabular form. Defaults to False.
         """
-
+        
+        if verbose:
+            print ("----------------------------------------------")
+            exclude_columns=['Job End', 'Job Start','Exit Status']
+            print (self.dask_jobs.drop(columns=exclude_columns).describe())
+            print ("----------------------------------------------")
         # -- compute summary stats for all fields
         fields = [
-            "Unused Mem (%)",
-            "Req Mem (GB)",
             "Used Mem(GB)",
+            "Req Mem (GB)",
+            "Unused Mem (%)",
             "CPU (%)",
             "Elapsed (h)",
             #"Walltime (h)",
@@ -205,7 +219,7 @@ class JobsSummary:
         df = pd.DataFrame(result_dict)
         # Create a multi-level column header
         header = pd.MultiIndex.from_product(
-            [["Resource Usage Summary of Dask workers"], df.columns]
+            [["Resource Usage Summary of Jobs"], df.columns]
         )
         df.columns = header
         # -- two digits of precision
@@ -213,7 +227,7 @@ class JobsSummary:
         #df = df.apply(lambda x: x.map(lambda y: "{:.2f}".format(y)))
 
         print("------------------------")
-        print("Number of Dask jobs : ", len(self.dask_jobs))
+        print("Number of jobs : ", len(self.dask_jobs))
 
         if table:
             print(df.apply(lambda x: x.map(lambda y: "{:.2f}".format(y))))
