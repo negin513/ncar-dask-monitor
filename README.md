@@ -2,14 +2,28 @@
 ![CI](https://img.shields.io/github/actions/workflow/status/negin513/ncar-dask-monitor/main.yml?label=CI&logo=GitHub&style=flat-square)
 
 
-This Python package summarizes the resource usage history of Dask workers in NCAR clusters and provides insights to both individual users and system administrators, allowing them to better understand memory usage patterns and optimize resource allocation.
+This Python package summarizes the resource usage history of your Casper jobs or Dask workers in NCAR clusters and provides insights to both individual users and system administrators, allowing them to better understand memory usage patterns and optimize resource allocation.
 
 Users can track memory usage for individual or all users over a given period, gaining insights for better resource allocation and workflow optimization.
 
 
 ## How to use this script?
 
-You can use this script to see your dask resource usage over a period of time.
+You can use this script to check the resource usage of your jobs on Casper:
+
+For example:
+
+```
+# Check resource usage for the last 10 days
+casper_resource_monitor -d 10 --table 
+```
+
+You can also check the memory usage of specific jobs by providing job names (pattern):
+```
+casper_resouce_monitor -d 10 --job test* --table
+```
+
+Similarly, you can use this script to check the resource usage of your Dask workers:
 
 For example:
 ```
