@@ -169,8 +169,11 @@ class JobsSummary:
             dask_jobs["Unused Mem (GB)"] / dask_jobs["Req Mem (GB)"] * 100.0
         )
 
+        #pd.options.display.float_format = '{:,.2f}'.format
+
         if verbose: 
             print ('---------------')
+            pd.set_option('display.float_format', '{:.2f}'.format)
             print (dask_jobs.to_string())
 
         self.dask_jobs = dask_jobs
