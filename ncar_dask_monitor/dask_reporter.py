@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-
+import os
 import logging
 import argparse
 import pandas as pd
@@ -66,7 +66,7 @@ def get_parser():
         dest="filename",
         required=False,
         action="store",
-        default="log.txt",
+        default=os.path.join("/glade/derecho/scratch", myname, "qhist_log.txt"),
         help="The name of the file to extract data from.",
     )
 
