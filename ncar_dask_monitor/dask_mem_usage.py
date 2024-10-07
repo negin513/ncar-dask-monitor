@@ -41,7 +41,7 @@ def get_parser():
     """
     myname = getuser()
     today_date = datetime.today().strftime('%Y%m%d')
-    default_filename = f"log_{today_date}.txt"
+    default_filename = f"qhist_log_{today_date}.txt"
 
     parser = argparse.ArgumentParser(
         description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
