@@ -22,6 +22,7 @@ or
 """
 import argparse
 import logging
+import os
 from getpass import getuser
 from datetime import datetime, timedelta
 
@@ -90,7 +91,7 @@ def get_parser():
         dest="filename",
         required=False,
         action="store",
-        default="log.txt",
+        default=os.path.join("/glade/derecho/scratch", myname, "qhist_log.txt"),
         help="The name of the qhist output. [default: %(default)s]",
     )
 
