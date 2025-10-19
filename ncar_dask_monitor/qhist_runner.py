@@ -36,14 +36,12 @@ class QhistRunner:
 
         if self.username and self.username != 'all':
             command = "qhist --format="+qformat,\
-                        " --timefmt=long ", \
                         " -p " + self.start_date+'-'+self.end_date, \
                         " -u " + self.username, \
                         " -c ", " >& " + self.filename
 
         else:
             command = "qhist --format="+qformat+ \
-                        " --timefmt=long ", \
                         " -p " + self.start_date+'-'+self.end_date, \
                         " -c ", " >& " + self.filename
 
@@ -63,11 +61,11 @@ class QhistRunner:
         command = self._create_command()
         if verbose:
             print ('>> ', command)
-        process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, text=True)
         stdout, stderr = process.communicate()
         if stderr:
-            error_msg = f"Error: {stderr.decode('utf-8').strip()}"
+            error_msg = f"Error: {stderr.strip()}"
             print(error_msg)
             sys.exit(1)  # Exits the script with an error code
         else:
-            return f"Result: {stdout.decode('utf-8').strip()}"
+            return f"Result: {stdout.strip()}"
