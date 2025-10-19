@@ -1,24 +1,19 @@
 import sys
 import subprocess
 
+
 class QhistRunner:
     """
-    A class that runs shell commands to extract data from a file.
+    Run qhist commands for a given user and date range, saving output to a file.
 
     Attributes:
         start_date (str): The start date of the date range to extract.
         end_date (str): The end date of the date range to extract.
-        filename (str): The name of the file to extract data from.
+-       filename (str): The name of the file to extract data from.
+        username (str): The username for which to extract qhist data.
     """
-    def __init__(self, start_date, end_date, filename, username):
-        """
-        Initializes a ShellRunner object.
 
-        Args:
-            start_date (str): The start date of the date range to extract.
-            end_date (str): The end date of the date range to extract.
-            filename (str): The name of the file to extract data from.
-        """
+    def __init__(self, start_date, end_date, filename, username):
         self.start_date = start_date
         self.end_date = end_date
         self.filename = filename
@@ -26,46 +21,50 @@ class QhistRunner:
 
     def _create_command(self):
         """
-        Creates a shell command for running qhist
+        Construct the qhist command string.
 
         Returns:
-            str: The shell command.
+            str: The constructed qhist command.
         """
-        #Job ID,Queue,Nodes,NCPUs,NGPUs,Req Mem (GB),Used Mem(GB),Job Submit,Job Start,Job End,Walltime (h),Exit Status,Job Name
-        qformat = "'user,queue,numnodes,numcpus,reqmem,memory,start,end,elapsed,walltime,waittime,name,avgcpu,resources,status'"
+        qformat = (
+            "'id,user,queue,numnodes,numcpus,reqmem,memory,start,end,"
+            "elapsed,walltime,waittime,name,avgcpu,resources,status'"
+        )
 
-        if self.username and self.username != 'all':
-            command = "qhist --format="+qformat,\
-                        " -p " + self.start_date+'-'+self.end_date, \
-                        " -u " + self.username, \
-                        " -c ", " >& " + self.filename
+        base = f"qhist --format={qformat} -p {self.start_date}-{self.end_date}"
 
+        if self.username and self.username != "all":
+            command = f"{base} -u {self.username} -c > {self.filename}"
         else:
-            command = "qhist --format="+qformat+ \
-                        " -p " + self.start_date+'-'+self.end_date, \
-                        " -c ", " >& " + self.filename
+            command = f"{base} -c > {self.filename}"
 
-        command = ''.join(str(i) for i in command)
         return command
 
     def run_shell_code(self, verbose=False):
         """
-        Runs a shell command to extract data from a file.
+        Run the qhist command and capture stdout/stderr safely.
 
         Args:
-            verbose (bool, optional): Whether to display the qhist command.
-
+            verbose (bool): If True, print the command and its output.  
+        
         Returns:
-            str: The result of the shell command.
+            str: The standard output from the command execution.
         """
         command = self._create_command()
         if verbose:
-            print ('>> ', command)
-        process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, text=True)
+            print(">>", command)
+
+        process = subprocess.Popen(
+            command,
+            shell=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+        )
         stdout, stderr = process.communicate()
-        if stderr:
-            error_msg = f"Error: {stderr.strip()}"
-            print(error_msg)
-            sys.exit(1)  # Exits the script with an error code
-        else:
-            return f"Result: {stdout.strip()}"
+
+        if process.returncode != 0:
+            print(f"Error running qhist:\n{stderr.strip()}")
+            sys.exit(1) 
+
+        return stdout.strip()
