@@ -20,9 +20,10 @@ or
     casper_resource_monitor --day 10 --user all --table
 
 """
+import os
 import argparse
 import logging
-import os
+from pathlib import Path
 from getpass import getuser
 from datetime import datetime, timedelta
 
@@ -40,6 +41,8 @@ def get_parser():
         argparse.ArgumentParser: An ArgumentParser object.
     """
     myname = getuser()
+    today_date = datetime.today().strftime('%Y%m%d')
+    default_filename = f"qhist_log_{today_date}.txt"
 
     parser = argparse.ArgumentParser(
         description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
@@ -91,7 +94,7 @@ def get_parser():
         dest="filename",
         required=False,
         action="store",
-        default=os.path.join("/glade/derecho/scratch", myname, "qhist_log.txt"),
+        default=os.path.join("/glade/derecho/scratch",myname,default_filename),     
         help="The name of the qhist output. [default: %(default)s]",
     )
 
@@ -180,17 +183,27 @@ def run_qhist(args):
     Args:
         args (argparse.Namespace): A namespace object containing the parsed arguments.
     """
+    filename_directory = os.path.dirname(args.filename)
+    if not os.path.exists(filename_directory):
+        os.makedirs(filename_directory)
+        if args.verbose:
+            logging.info(f"Created directory: {filename_directory}")
+    
     runner = QhistRunner(args.start_date, args.end_date, args.filename, args.user)
     result = runner.run_shell_code(args.verbose)
 
     jobs = JobsSummary(args.filename, args.worker,args.verbose)
     jobs.dask_user_report(args.table,args.verbose)
+    user = os.environ.get("USER") or getuser()
+    scratch_dir = Path(f"/glade/derecho/scratch/{user}/tmp")
+    scratch_dir.mkdir(parents=True, exist_ok=True)
 
     if args.user == "all":
-        report = "users_" + args.start_date + "-" + args.end_date + ".txt"
-        logging.info(f"All users report is saved in {report}")
-        jobs.dask_csg_report(report)
+        report_name = "users_" + args.start_date + "-" + args.end_date + ".txt"
+        report_path = scratch_dir / report_name
+        jobs.dask_csg_report(report_path,args.verbose)
 
+        logging.info(f"\nAll users report is saved in {report_path}")
 
 def main():
     """
@@ -204,12 +217,12 @@ def main():
 
     if args.verbose:
         logging.basicConfig(level=logging.DEBUG, format="%(message)s")
-
-        logging.info("User selection:")
-        logging.info(f"\tstart_date : {start_date_dt}")
-        logging.info(f"\tend_date   : {end_date_dt}")
-        logging.info(f"\tuser       : {args.user}")
-        #logging.info(f"\tfilename   : {args.filename}")
+        logging.info(
+            f"Selections → user: {args.user} | "
+            f"start: {start_date_dt.strftime('%Y-%m-%d')} | "
+            f"end: {end_date_dt.strftime('%Y-%m-%d')} | "
+            f"worker pattern: '{args.worker}'"
+        )
 
     run_qhist(args)
 
