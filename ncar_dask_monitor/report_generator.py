@@ -1,4 +1,6 @@
+import os
 import sys
+import io
 import warnings
 
 import pandas as pd
@@ -109,27 +111,56 @@ class JobsSummary:
         Read the qhist file and select Dask jobs only.
         """
         date_columns = ['Job Start', 'Job End']
-        date_format = '%Y-%m-%dT%H:%M:%S'
+        #date_format = '%Y-%m-%dT%H:%M:%S'
 
+        # Check file existence
+        if not os.path.exists(self.filename):
+            warnings.warn(f"File not found: {self.filename}")
+            return
+        
         # Check if the file is empty or not
         with open(self.filename, 'r') as file:
     	    content = file.read()
 
         if "No jobs found matching search criteria" in content:
             warnings.warn("No jobs found matching search criteria!")
-            sys.exit()
+            return
 
-        jobs = pd.read_csv(self.filename, na_values='-',parse_dates=date_columns, date_format=date_format)
-        jobs = jobs.rename(columns={"Avg CPU (%)": "CPU (%)"})
+        #jobs = pd.read_csv(self.filename, na_values='-',parse_dates=date_columns, date_format=date_format, skiprows=1)
+
+        # Filter out any warning lines like '/glade/u/apps/opt/...'
+        #lines = [line for line in content.splitlines() if not line.startswith("/glade/u/apps/opt/")]
+        lines = content.splitlines()
+        if lines and lines[0].startswith("/glade/u/apps/opt/"):
+            # Skip the first two lines (warning + wrapped header fragment)
+            lines = lines[2:]
+
+        df = pd.read_csv(io.StringIO("\n".join(lines)))
+
+        # Try reading as CSV
+        try:
+            jobs = pd.read_csv(
+                io.StringIO("\n".join(lines)),
+                na_values='-',
+                parse_dates=date_columns,
+                #infer_datetime_format=True
+            )
+        except Exception as e:
+            warnings.warn(f"Error reading CSV: {e}")
+            return
+
+
+        #jobs = jobs.rename(columns={"AVG CPU": "AVG CPU(%)"})
         #print (jobs)
-
-
         jobs['Elapsed (h)'] = (jobs['Job End'] - jobs['Job Start']).dt.total_seconds() / 3600
+
+        print ('-----')
+        print (jobs)
 
         # -- check if there is any jobs for this user
         if len(jobs) == 0:
             warnings.warn("Warning! No jobs found for this user and this time period!")
-            sys.exit()
+            return
 
         # -- select dask-jobs
         #print (self.worker)
@@ -138,8 +169,12 @@ class JobsSummary:
         jobs.dropna(subset=["Job Name"], inplace=True)
         
         if self.worker != 'all':
+            if verbose:
+                print(f"Selecting jobs with worker name containing '{self.worker}'")
             dask_jobs = jobs[jobs["Job Name"].str.contains(self.worker)]
         else:
+            if verbose:
+                print("Selecting all jobs as worker is set to 'all'")
             dask_jobs = jobs
 
         #dask_jobs = jobs[jobs["Job Name"].str.contains("dask-worker*")]
@@ -151,9 +186,9 @@ class JobsSummary:
         dask_jobs= dask_jobs.dropna()
 
         data_types = {
-            "Req Mem (GB)": float,
-            "Used Mem(GB)": float,
-            "Elapsed (h)": float,
+            "Req Mem": float,
+            "Used Mem": float,
+            "Elapsed": float,
         }
         dask_jobs = dask_jobs.astype(data_types)
 
@@ -163,26 +198,38 @@ class JobsSummary:
             warnings.warn("Warning! No jobs found for this user and this time period!")
             sys.exit()
 
-        dask_jobs["Unused Mem (GB)"] = (
-            dask_jobs["Req Mem (GB)"] - dask_jobs["Used Mem(GB)"]
+        dask_jobs["Unused Mem"] = (
+            dask_jobs["Req Mem"] - dask_jobs["Used Mem"]
         )
         dask_jobs["Unused Mem (%)"] = (
-            dask_jobs["Unused Mem (GB)"] / dask_jobs["Req Mem (GB)"] * 100.0
+            dask_jobs["Unused Mem"] / dask_jobs["Req Mem"] * 100.0
         )
 
         #pd.options.display.float_format = '{:,.2f}'.format
 
-        if verbose: 
-            print ('---------------')
-            exclude_columns=['Job End', 'Job Start']
-            pd.set_option('display.max_rows', None)
-            print (dask_jobs.drop(columns=exclude_columns).to_string(float_format='{:,.2f}'.format))
-            #print (dask_jobs.drop(columns=exclude_columns))
-            print ('---------------')
-            print ('minimum memory % job:')
-            print (dask_jobs.drop(columns=exclude_columns).loc[dask_jobs['Unused Mem (%)'].idxmax()])
-            print ('maximum memory % job:')
-            print (dask_jobs.drop(columns=exclude_columns).loc[dask_jobs['Unused Mem (%)'].idxmin()])
+        if verbose:
+            exclude_columns = ["Job End", "Job Start"]
+            pd.set_option("display.max_rows", None)
+            pd.options.display.float_format = "{:,.2f}".format
+
+            print("\n==============================")
+            print("Dask Job Summary [Filtered]")
+            print("==============================\n")
+
+            # Print summary table (excluding start/end times)
+            print(dask_jobs.drop(columns=exclude_columns, errors="ignore").to_string(index=False))
+            print("\n------------------------------")
+
+            # Find and display jobs with min/max unused memory
+            max_unused = dask_jobs.loc[dask_jobs["Unused Mem (%)"].idxmax()].drop(labels=exclude_columns, errors="ignore")
+            min_unused = dask_jobs.loc[dask_jobs["Unused Mem (%)"].idxmin()].drop(labels=exclude_columns, errors="ignore")
+
+            print("Job with Highest Unused Memory (%):")
+            print(max_unused.to_string())
+            print("\nJob with Lowest Unused Memory (%):")
+            print(min_unused.to_string())
+
+            print("\n==============================\n")
 
 
         self.dask_jobs = dask_jobs
@@ -204,10 +251,10 @@ class JobsSummary:
             print ("----------------------------------------------")
         # -- compute summary stats for all fields
         fields = [
-            "Used Mem(GB)",
-            "Req Mem (GB)",
+            "Used Mem",
+            "Req Mem",
             "Unused Mem (%)",
-            "CPU (%)",
+            "Avg CPU",
             "Elapsed (h)",
             #"Walltime (h)",
         ]
@@ -246,42 +293,56 @@ class JobsSummary:
             bins = [0, 25, 50, 75, 100]
             labels = ["<25%", "25-50%", "50-75%", ">=75%"]
             bin_summary(self.dask_jobs, "Unused Mem (%)", bins, labels)
-            bin_summary(self.dask_jobs, "CPU (%)", bins, labels)
+            bin_summary(self.dask_jobs, "Avg CPU", bins, labels)
 
 
     def dask_csg_report(self, report: str, save_csv: bool = True) -> None:
         """
         Generate a report on Dask job usage for CSG staff.
 
-        Parameters:
-        -----------
+        Parameters
+        ----------
         report : str
-            A string containing the file path to save the report.
+            Path to save the report CSV file.
         save_csv : bool, optional
-            A boolean specifying whether to write the report to a CSV file or not, by default True.
-
-        Returns:
-        --------
-        None
+            Whether to write the report to a CSV file (default: True).
         """
-        grouped_dj = self.dask_jobs.groupby("User").agg(
-            {
-                "Req Mem (GB)": "mean",
-                "Unused Mem (GB)": "mean",
-                "Unused Mem (%)": "mean",
-                "Elapsed (h)": "mean",
-                "Job ID": "count",
-            }
+        # ---- Group by user, keeping your original column names
+        grp = self.dask_jobs.groupby("User")
+
+        grouped_dj = grp.agg({
+            "Req Mem": "mean",
+            "Unused Mem": "mean",
+            "Unused Mem (%)": "mean",
+            "Elapsed (h)": "mean",       # or "Elapsed (h)" if you prefer hours
+        })
+
+        # Add a job count column named "Job ID" for consistency
+        grouped_dj["Job ID"] = grp.size()
+
+        grouped_dj = grouped_dj.reset_index()
+
+        # ---- Filter users with Unused Mem (%) >= 0
+        dj_agg = grouped_dj[grouped_dj["Unused Mem (%)"] >= 0].copy()
+
+        # ---- Compute unused core-hour metric (GB * hr * job count)
+        dj_agg["Unused Core-Hour (GB.hr)"] = (
+            dj_agg["Unused Mem"] * dj_agg["Elapsed (h)"] * dj_agg["Job ID"]
         )
-        # -- show all users with Unused Mem > 0%
-        dj_80 = grouped_dj[grouped_dj["Unused Mem (%)"] >= 0].copy()
-        dj_80["Unused Core-Hour (GB.hr)"] = (
-            dj_80["Unused Mem (GB)"] * dj_80["Elapsed (h)"] * dj_80["Job ID"]
-        )
-        dj_80 = dj_80.rename(columns={"Job ID": "Dask job count"})
+
+        # ---- Rename the count column to clarify meaning
+        dj_agg = dj_agg.rename(columns={"Job ID": "Dask Job Count"})
+
+        # ---- Display nicely formatted summary
         pd.options.display.float_format = "{:.2f}".format
-        print(dj_80.sort_values(by=["Unused Core-Hour (GB.hr)"], ascending=False).to_string())
-        #print(dj_80.sort_values(by=["Unused Core-Hour (GB.hr)"], ascending=False).to_markdown())
-        
+        print(
+            dj_agg.sort_values(
+                by=["Unused Core-Hour (GB.hr)"], ascending=False
+            ).to_string(index=False)
+        )
+
+        # ---- Save to CSV if requested
         if save_csv:
-            dj_80.to_csv(report)
+            dj_agg.to_csv(report, index=False)
+            print(f"\nReport saved to: {report}")
+
