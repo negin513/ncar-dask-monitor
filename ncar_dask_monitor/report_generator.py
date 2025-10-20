@@ -1,12 +1,12 @@
 import os
-import sys
 import io
+import sys
 import warnings
 
 import pandas as pd
 
 
-def compute_summary_stats(df: pd.DataFrame, field_name: str, verbose=False) -> dict:
+def compute_summary_stats(df: pd.DataFrame, field_name: str, verbose: bool = False) -> dict:
     """
     Compute and print the count, mean, min, and max values of a field in DataFrame
 
@@ -26,23 +26,45 @@ def compute_summary_stats(df: pd.DataFrame, field_name: str, verbose=False) -> d
         # call the function for the 'Unused Mem (%)' field
         result_dict = compute_summary_stats(df, 'Unused Mem (%)')
     """
-    summary = df[field_name].describe()
-    count = summary.loc["count"]
-    mean_val = summary.loc["mean"]
-    median_val = summary.loc["50%"]
-    min_val = summary.loc["min"]
-    max_val = summary.loc["max"]
+    if field_name not in df.columns:
+        warnings.warn(f"Missing column: {field_name}")
+        return {}
+
+    s = pd.to_numeric(df[field_name], errors="coerce").dropna()
+    if s.empty:
+        warnings.warn(f"No numeric data found in column: {field_name}")
+        return {}
+
+    summary = s.describe()
+    count = int(summary.loc["count"])
+    mean_val = float(summary.loc["mean"])
+    median_val = float(summary.loc["50%"])
+    min_val = float(summary.loc["min"])
+    max_val = float(summary.loc["max"])
+
     result_dict = {
-            field_name: { "mean": mean_val,"median":median_val, "min": min_val, "max": max_val}
+        field_name: {"mean": mean_val, "median": median_val, "min": min_val, "max": max_val}
     }
+
     if verbose:
-        result_str = (
-            f"Mean {field_name}   : {mean_val:.2f}\n"
-            f"Median {field_name} : {median_val:.2f}\n"
-            f"Min {field_name}    : {min_val:.2f}\n"
-            f"Max {field_name}    : {max_val:.2f}"
-        )
-        print(result_str)
+        is_percent = "%" in field_name
+        def fmt(x: float) -> str:
+            return f"{x:,.2f}%" if is_percent else f"{x:,.2f}"
+
+        title = f"Summary  {field_name}"
+        bar = "─" * len(title)
+        print(f"\n{bar}\n{title}")
+
+        labels = ["Count", "Mean", "Median", "Min", "Max"]
+        label_w = max(len(lbl) for lbl in labels)
+        row = lambda name, val: print(f"{name:<{label_w}} : {val}")
+
+        row("Count", f"{count:,}")
+        row("Mean",  fmt(mean_val))
+        row("Median", fmt(median_val))
+        row("Min",   fmt(min_val))
+        row("Max",   fmt(max_val))
+
     return result_dict
 
 
@@ -61,6 +83,10 @@ def bin_summary(
     Returns:
         None: The function prints the percentage of the column in each bin.
     """
+    if field_name not in df.columns:
+        warnings.warn(f"Missing column: {field_name}")
+        return
+
     if bins is None:
         bins = [0, 25, 50, 75, 100]
 
@@ -84,6 +110,7 @@ def bin_summary(
         .reset_index(name="Jobs %")
         .to_string(index=False)
     )
+
 
 class JobsSummary:
     """
@@ -126,10 +153,7 @@ class JobsSummary:
             warnings.warn("No jobs found matching search criteria!")
             return
 
-        #jobs = pd.read_csv(self.filename, na_values='-',parse_dates=date_columns, date_format=date_format, skiprows=1)
-
         # Filter out any warning lines like '/glade/u/apps/opt/...'
-        #lines = [line for line in content.splitlines() if not line.startswith("/glade/u/apps/opt/")]
         lines = content.splitlines()
         if lines and lines[0].startswith("/glade/u/apps/opt/"):
             # Skip the first two lines (warning + wrapped header fragment)
@@ -143,19 +167,21 @@ class JobsSummary:
                 io.StringIO("\n".join(lines)),
                 na_values='-',
                 parse_dates=date_columns,
-                #infer_datetime_format=True
             )
         except Exception as e:
             warnings.warn(f"Error reading CSV: {e}")
             return
 
+        # --- Normalize column names ---
+        rename_map = {
+            "Req Mem": "Req Mem (GB)",
+            "Used Mem": "Used Mem (GB)",
+            "Avg CPU": "CPU (%)",    # <-- key rename
+            "AVG CPU": "CPU (%)",    # <-- for older qhist output variants
+        }
+        jobs.rename(columns=rename_map, inplace=True)
 
-        #jobs = jobs.rename(columns={"AVG CPU": "AVG CPU(%)"})
-        #print (jobs)
         jobs['Elapsed (h)'] = (jobs['Job End'] - jobs['Job Start']).dt.total_seconds() / 3600
-
-        print ('-----')
-        print (jobs)
 
         # -- check if there is any jobs for this user
         if len(jobs) == 0:
@@ -163,9 +189,6 @@ class JobsSummary:
             return
 
         # -- select dask-jobs
-        #print (self.worker)
-        #nan_values = jobs["Job Name"].isna().sum()
-        #print("Number of NaN values in 'Job Name' column:", nan_values)
         jobs.dropna(subset=["Job Name"], inplace=True)
         
         if self.worker != 'all':
@@ -177,35 +200,29 @@ class JobsSummary:
                 print("Selecting all jobs as worker is set to 'all'")
             dask_jobs = jobs
 
-        #dask_jobs = jobs[jobs["Job Name"].str.contains("dask-worker*")]
-        ## dask_jobs = jobs[jobs["Job Name"] == "dask-worker"]
-
         # remove all rows with "economy" in the "queue" column
         dask_jobs = dask_jobs[dask_jobs["Queue"] != "economy"]
 
         dask_jobs= dask_jobs.dropna()
 
         data_types = {
-            "Req Mem": float,
-            "Used Mem": float,
+            "Req Mem (GB)": float,
+            "Used Mem (GB)": float,
             "Elapsed": float,
         }
         dask_jobs = dask_jobs.astype(data_types)
 
         # -- check if there are any dask jobs for this user
         if len(dask_jobs) == 0:
-            #warnings.warn("Warning! No Dask Jobs Found!")
             warnings.warn("Warning! No jobs found for this user and this time period!")
-            sys.exit()
+            sys.exit(1)
 
-        dask_jobs["Unused Mem"] = (
-            dask_jobs["Req Mem"] - dask_jobs["Used Mem"]
+        dask_jobs["Unused Mem (GB)"] = (
+            dask_jobs["Req Mem (GB)"] - dask_jobs["Used Mem (GB)"]
         )
         dask_jobs["Unused Mem (%)"] = (
-            dask_jobs["Unused Mem"] / dask_jobs["Req Mem"] * 100.0
+            dask_jobs["Unused Mem (GB)"] / dask_jobs["Req Mem (GB)"] * 100.0
         )
-
-        #pd.options.display.float_format = '{:,.2f}'.format
 
         if verbose:
             exclude_columns = ["Job End", "Job Start"]
@@ -213,12 +230,11 @@ class JobsSummary:
             pd.options.display.float_format = "{:,.2f}".format
 
             print("\n==============================")
-            print("Dask Job Summary [Filtered]")
-            print("==============================\n")
+            print("Dask Job Summary [Filtered]\n")
 
             # Print summary table (excluding start/end times)
             print(dask_jobs.drop(columns=exclude_columns, errors="ignore").to_string(index=False))
-            print("\n------------------------------")
+            print("\n==============================")
 
             # Find and display jobs with min/max unused memory
             max_unused = dask_jobs.loc[dask_jobs["Unused Mem (%)"].idxmax()].drop(labels=exclude_columns, errors="ignore")
@@ -228,9 +244,7 @@ class JobsSummary:
             print(max_unused.to_string())
             print("\nJob with Lowest Unused Memory (%):")
             print(min_unused.to_string())
-
-            print("\n==============================\n")
-
+            print("==============================\n")
 
         self.dask_jobs = dask_jobs
 
@@ -251,12 +265,11 @@ class JobsSummary:
             print ("----------------------------------------------")
         # -- compute summary stats for all fields
         fields = [
-            "Used Mem",
-            "Req Mem",
+            "Used Mem (GB)",
+            "Req Mem (GB)",
             "Unused Mem (%)",
-            "Avg CPU",
+            "CPU (%)",
             "Elapsed (h)",
-            #"Walltime (h)",
         ]
         result_dict = {}
         for field in fields:
@@ -269,9 +282,6 @@ class JobsSummary:
             [["Resource Usage Summary of Jobs"], df.columns]
         )
         df.columns = header
-        # -- two digits of precision
-        #df = df.applymap(lambda x: "{:.2f}".format(x))
-        #df = df.apply(lambda x: x.map(lambda y: "{:.2f}".format(y)))
 
         print("------------------------")
         print("Number of jobs : ", len(self.dask_jobs))
@@ -288,13 +298,12 @@ class JobsSummary:
                 print(f"\tmin    : {inner_dict['min']:.2f}")
                 print(f"\tmax    : {inner_dict['max']:.2f}")
 
-            print("------------------------")
-            print("Summary Overview:")
+            print("\n=== Memory & CPU Distribution ===")
             bins = [0, 25, 50, 75, 100]
             labels = ["<25%", "25-50%", "50-75%", ">=75%"]
             bin_summary(self.dask_jobs, "Unused Mem (%)", bins, labels)
-            bin_summary(self.dask_jobs, "Avg CPU", bins, labels)
-
+            if "CPU (%)" in self.dask_jobs.columns:
+                bin_summary(self.dask_jobs, "CPU (%)", bins, labels)
 
     def dask_csg_report(self, report: str, save_csv: bool = True) -> None:
         """
@@ -311,10 +320,10 @@ class JobsSummary:
         grp = self.dask_jobs.groupby("User")
 
         grouped_dj = grp.agg({
-            "Req Mem": "mean",
-            "Unused Mem": "mean",
+            "Req Mem (GB)": "mean",
+            "Unused Mem (GB)": "mean",
             "Unused Mem (%)": "mean",
-            "Elapsed (h)": "mean",       # or "Elapsed (h)" if you prefer hours
+            "Elapsed (h)": "mean",
         })
 
         # Add a job count column named "Job ID" for consistency
@@ -327,11 +336,12 @@ class JobsSummary:
 
         # ---- Compute unused core-hour metric (GB * hr * job count)
         dj_agg["Unused Core-Hour (GB.hr)"] = (
-            dj_agg["Unused Mem"] * dj_agg["Elapsed (h)"] * dj_agg["Job ID"]
+            dj_agg["Unused Mem (GB)"] * dj_agg["Elapsed (h)"] * dj_agg["Job ID"]
         )
 
-        # ---- Rename the count column to clarify meaning
-        dj_agg = dj_agg.rename(columns={"Job ID": "Dask Job Count"})
+        dj_agg = dj_agg.rename(columns={"Job ID": "Job Count"})
+
+        print("\n=== All user Report ===")
 
         # ---- Display nicely formatted summary
         pd.options.display.float_format = "{:.2f}".format
@@ -344,5 +354,3 @@ class JobsSummary:
         # ---- Save to CSV if requested
         if save_csv:
             dj_agg.to_csv(report, index=False)
-            print(f"\nReport saved to: {report}")
-
