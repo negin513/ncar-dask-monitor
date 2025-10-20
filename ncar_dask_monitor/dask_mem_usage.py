@@ -23,6 +23,7 @@ or
 import os
 import argparse
 import logging
+from pathlib import Path
 from getpass import getuser
 from datetime import datetime, timedelta
 
@@ -194,11 +195,16 @@ def run_qhist(args):
 
     jobs = JobsSummary(args.filename, args.worker,args.verbose)
     jobs.dask_user_report(args.table,args.verbose)
+    user = os.environ.get("USER") or getuser()
+    scratch_dir = Path(f"/glade/derecho/scratch/{user}/tmp")
+    scratch_dir.mkdir(parents=True, exist_ok=True)
 
     if args.user == "all":
-        report = "users_" + args.start_date + "-" + args.end_date + ".txt"
-        logging.info(f"All users report is saved in {report}")
-        jobs.dask_csg_report(report)
+        report_name = "users_" + args.start_date + "-" + args.end_date + ".txt"
+        report_path = scratch_dir / report_name
+        jobs.dask_csg_report(report_path,args.verbose)
+
+        logging.info(f"\nAll users report is saved in {report_path}")
 
 
 def main():
@@ -211,16 +217,14 @@ def main():
     start_date_dt = datetime.strptime(args.start_date, "%Y%m%d")
     end_date_dt = datetime.strptime(args.end_date, "%Y%m%d")
 
-
-
     if args.verbose:
         logging.basicConfig(level=logging.DEBUG, format="%(message)s")
-
-        logging.info("User selection:")
-        logging.info(f"\tstart_date : {start_date_dt}")
-        logging.info(f"\tend_date   : {end_date_dt}")
-        logging.info(f"\tuser       : {args.user}")
-        #logging.info(f"\tfilename   : {args.filename}")
+        logging.info(
+            f"Selections → user: {args.user} | "
+            f"start: {start_date_dt.strftime('%Y-%m-%d')} | "
+            f"end: {end_date_dt.strftime('%Y-%m-%d')} | "
+            f"worker pattern: '{args.worker}'"
+        )
 
     run_qhist(args)
 

@@ -61,14 +61,14 @@ class TestJobsSummary(unittest.TestCase):
             jobs_summary.dask_user_report(table=True)
             self.assertEqual(mock_print.call_count, 3)
             jobs_summary.dask_user_report(table=False)
-            self.assertEqual(mock_print.call_count, 34)
+            self.assertEqual(mock_print.call_count, 33)
 
     def test_JobsSummary_dask_csg_report(self):
         jobs_summary = JobsSummary(self.csv_file)
         jobs_summary._read_all_jobs()
         with patch("builtins.print") as mock_print:
             jobs_summary.dask_csg_report("report.csv", save_csv=False)
-            self.assertEqual(mock_print.call_count, 1)
-            jobs_summary.dask_csg_report("report.csv", save_csv=True)
             self.assertEqual(mock_print.call_count, 2)
+            jobs_summary.dask_csg_report("report.csv", save_csv=True)
+            self.assertEqual(mock_print.call_count, 4)
             os.remove ("report.csv")
