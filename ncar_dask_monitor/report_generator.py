@@ -305,7 +305,7 @@ class JobsSummary:
             if "CPU (%)" in self.dask_jobs.columns:
                 bin_summary(self.dask_jobs, "CPU (%)", bins, labels)
 
-    def dask_csg_report(self, report: str, save_csv: bool = True) -> None:
+    def dask_csg_report(self, report: str, save_csv: bool = True, sort_var="mem") -> None:
         """
         Generate a report on Dask job usage for CSG staff.
 
@@ -324,6 +324,7 @@ class JobsSummary:
             "Unused Mem (GB)": "mean",
             "Unused Mem (%)": "mean",
             "Elapsed (h)": "mean",
+            "CPU (%)": "mean",
         })
 
         # Add a job count column named "Job ID" for consistency
@@ -335,8 +336,12 @@ class JobsSummary:
         dj_agg = grouped_dj[grouped_dj["Unused Mem (%)"] >= 0].copy()
 
         # ---- Compute unused core-hour metric (GB * hr * job count)
-        dj_agg["Unused Core-Hour (GB.hr)"] = (
+        dj_agg["Unused MemxHour (GB.hr)"] = (
             dj_agg["Unused Mem (GB)"] * dj_agg["Elapsed (h)"] * dj_agg["Job ID"]
+        )
+
+        dj_agg["Unused CPU-Hour"] = (
+            (100 - dj_agg["CPU (%)"]) / 100 * dj_agg["Elapsed (h)"] * dj_agg["Job ID"]
         )
 
         dj_agg = dj_agg.rename(columns={"Job ID": "Job Count"})
@@ -345,9 +350,15 @@ class JobsSummary:
 
         # ---- Display nicely formatted summary
         pd.options.display.float_format = "{:.2f}".format
+        if sort_var == "mem":
+            sort_variable = "Unused MemxHour (GB.hr)"
+        elif sort_var == "cpu":
+            sort_variable = "Unused CPU-Hour"
+        else:
+            sort_variable = "Unused MemxHour (GB.hr)"
         print(
             dj_agg.sort_values(
-                by=["Unused Core-Hour (GB.hr)"], ascending=False
+                by=[sort_variable], ascending=False
             ).to_string(index=False)
         )
 
