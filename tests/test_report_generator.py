@@ -68,7 +68,7 @@ class TestJobsSummary(unittest.TestCase):
         jobs_summary._read_all_jobs()
         with patch("builtins.print") as mock_print:
             jobs_summary.dask_csg_report("report.csv", save_csv=False)
-            self.assertEqual(mock_print.call_count, 2)
+            self.assertEqual(mock_print.call_count, 3)
             jobs_summary.dask_csg_report("report.csv", save_csv=True)
-            self.assertEqual(mock_print.call_count, 4)
+            self.assertEqual(mock_print.call_count, 6)
             os.remove ("report.csv")
