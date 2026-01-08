@@ -6,7 +6,7 @@ import warnings
 import pandas as pd
 
 
-def compute_summary_stats(df: pd.DataFrame, field_name: str, verbose: bool = False) -> dict:
+def compute_summary_stats(df, field_name: str, verbose: bool = False) -> dict:
     """
     Compute and print the count, mean, min, and max values of a field in DataFrame
 
@@ -69,7 +69,7 @@ def compute_summary_stats(df: pd.DataFrame, field_name: str, verbose: bool = Fal
 
 
 def bin_summary(
-    df: pd.DataFrame, field_name: str, bins: list = None, labels: list = None
+    df, field_name: str, bins: list = None, labels: list = None
 ) -> None:
     """
     Compute and print the percentage of a df column in each bin.
@@ -257,7 +257,6 @@ class JobsSummary:
         table (bool, optional):
                 If True, prints the summary statistics in a tabular form. Defaults to False.
         """
-        
         if verbose:
             print ("----------------------------------------------")
             exclude_columns=['Job End', 'Job Start','Exit Status']
