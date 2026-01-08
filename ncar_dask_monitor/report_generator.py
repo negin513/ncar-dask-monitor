@@ -345,10 +345,11 @@ class JobsSummary:
 
         dj_agg = dj_agg.rename(columns={"Job ID": "Job Count"})
 
-        print("\n=== All user Report ===")
         avg_utilized_mem_cpu = (self.dask_jobs["Used Mem (GB)"] / self.dask_jobs["NCPUs"]).mean()
         avg_requested_mem_cpu = (self.dask_jobs["Req Mem (GB)"] / self.dask_jobs["NCPUs"]).mean()
         print(f"Average mem/cpu in GB: utilized={avg_utilized_mem_cpu:.2f}, requested={avg_requested_mem_cpu:.2f}")
+
+        print("\n=== All user Report ===")
 
         # ---- Display nicely formatted summary
         pd.options.display.float_format = "{:.2f}".format
