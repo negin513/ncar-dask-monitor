@@ -89,6 +89,16 @@ def get_parser():
     )
 
     parser.add_argument(
+        "--sort",
+        type=str,
+        dest="sort_var",
+        required=False,
+        action="store",
+        default="mem",
+        help=" Sort by variable (memory, CPU, GPU) [default: %(default)s]",
+    )
+
+    parser.add_argument(
         "--filename",
         type=str,
         dest="filename",
@@ -201,7 +211,7 @@ def run_qhist(args):
     if args.user == "all":
         report_name = "users_" + args.start_date + "-" + args.end_date + ".txt"
         report_path = scratch_dir / report_name
-        jobs.dask_csg_report(report_path,args.verbose)
+        jobs.dask_csg_report(report_path,args.verbose, args.sort_var)
 
         logging.info(f"\nAll users report is saved in {report_path}")
 

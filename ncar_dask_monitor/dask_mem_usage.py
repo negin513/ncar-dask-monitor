@@ -27,8 +27,6 @@ from pathlib import Path
 from getpass import getuser
 from datetime import datetime, timedelta
 
-import pandas as pd
-
 from .qhist_runner import QhistRunner
 from .report_generator import JobsSummary
 

@@ -6,7 +6,7 @@ import warnings
 import pandas as pd
 
 
-def compute_summary_stats(df: pd.DataFrame, field_name: str, verbose: bool = False) -> dict:
+def compute_summary_stats(df, field_name: str, verbose: bool = False) -> dict:
     """
     Compute and print the count, mean, min, and max values of a field in DataFrame
 
@@ -69,7 +69,7 @@ def compute_summary_stats(df: pd.DataFrame, field_name: str, verbose: bool = Fal
 
 
 def bin_summary(
-    df: pd.DataFrame, field_name: str, bins: list = None, labels: list = None
+    df, field_name: str, bins: list = None, labels: list = None
 ) -> None:
     """
     Compute and print the percentage of a df column in each bin.
@@ -257,7 +257,6 @@ class JobsSummary:
         table (bool, optional):
                 If True, prints the summary statistics in a tabular form. Defaults to False.
         """
-        
         if verbose:
             print ("----------------------------------------------")
             exclude_columns=['Job End', 'Job Start','Exit Status']
@@ -305,7 +304,7 @@ class JobsSummary:
             if "CPU (%)" in self.dask_jobs.columns:
                 bin_summary(self.dask_jobs, "CPU (%)", bins, labels)
 
-    def dask_csg_report(self, report: str, save_csv: bool = True) -> None:
+    def dask_csg_report(self, report: str, save_csv: bool = True, sort_var="mem") -> None:
         """
         Generate a report on Dask job usage for CSG staff.
 
@@ -324,6 +323,7 @@ class JobsSummary:
             "Unused Mem (GB)": "mean",
             "Unused Mem (%)": "mean",
             "Elapsed (h)": "mean",
+            "CPU (%)": "mean",
         })
 
         # Add a job count column named "Job ID" for consistency
@@ -335,19 +335,33 @@ class JobsSummary:
         dj_agg = grouped_dj[grouped_dj["Unused Mem (%)"] >= 0].copy()
 
         # ---- Compute unused core-hour metric (GB * hr * job count)
-        dj_agg["Unused Core-Hour (GB.hr)"] = (
+        dj_agg["Unused MemxHour (GB.hr)"] = (
             dj_agg["Unused Mem (GB)"] * dj_agg["Elapsed (h)"] * dj_agg["Job ID"]
         )
 
+        dj_agg["Unused CPU-Hour"] = (
+            (100 - dj_agg["CPU (%)"]) / 100 * dj_agg["Elapsed (h)"] * dj_agg["Job ID"]
+        )
+
         dj_agg = dj_agg.rename(columns={"Job ID": "Job Count"})
+
+        avg_utilized_mem_cpu = (self.dask_jobs["Used Mem (GB)"] / self.dask_jobs["NCPUs"]).mean()
+        avg_requested_mem_cpu = (self.dask_jobs["Req Mem (GB)"] / self.dask_jobs["NCPUs"]).mean()
+        print(f"Average mem/cpu in GB: utilized={avg_utilized_mem_cpu:.2f}, requested={avg_requested_mem_cpu:.2f}")
 
         print("\n=== All user Report ===")
 
         # ---- Display nicely formatted summary
         pd.options.display.float_format = "{:.2f}".format
+        if sort_var == "mem":
+            sort_variable = "Unused MemxHour (GB.hr)"
+        elif sort_var == "cpu":
+            sort_variable = "Unused CPU-Hour"
+        else:
+            sort_variable = "Unused MemxHour (GB.hr)"
         print(
             dj_agg.sort_values(
-                by=["Unused Core-Hour (GB.hr)"], ascending=False
+                by=[sort_variable], ascending=False
             ).to_string(index=False)
         )
 
