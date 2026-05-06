@@ -4,6 +4,14 @@ import sys
 import warnings
 
 import pandas as pd
+from rich.console import Console
+from rich.table import Table
+from rich.panel import Panel
+from rich.columns import Columns
+from rich.box import ROUNDED, DOUBLE, HEAVY
+from rich.text import Text
+
+console = Console()
 
 
 def compute_summary_stats(df, field_name: str, verbose: bool = False) -> dict:
@@ -51,26 +59,24 @@ def compute_summary_stats(df, field_name: str, verbose: bool = False) -> dict:
         def fmt(x: float) -> str:
             return f"{x:,.2f}%" if is_percent else f"{x:,.2f}"
 
-        title = f"Summary  {field_name}"
-        bar = "─" * len(title)
-        print(f"\n{bar}\n{title}")
+        table = Table(title=f"Summary: {field_name}", box=ROUNDED, show_header=True, header_style="bold cyan")
+        table.add_column("Statistic", style="bold")
+        table.add_column("Value", justify="right", style="green")
 
-        labels = ["Count", "Mean", "Median", "Min", "Max"]
-        label_w = max(len(lbl) for lbl in labels)
-        row = lambda name, val: print(f"{name:<{label_w}} : {val}")
+        table.add_row("Count", f"{count:,}")
+        table.add_row("Mean", fmt(mean_val))
+        table.add_row("Median", fmt(median_val))
+        table.add_row("Min", fmt(min_val))
+        table.add_row("Max", fmt(max_val))
 
-        row("Count", f"{count:,}")
-        row("Mean",  fmt(mean_val))
-        row("Median", fmt(median_val))
-        row("Min",   fmt(min_val))
-        row("Max",   fmt(max_val))
+        console.print(table)
 
     return result_dict
 
 
 def bin_summary(
-    df, field_name: str, bins: list = None, labels: list = None
-) -> None:
+    df, field_name: str, bins: list = None, labels: list = None, print_table: bool = True
+) -> Table:
     """
     Compute and print the percentage of a df column in each bin.
 
@@ -79,13 +85,14 @@ def bin_summary(
         field_name (str): The name of the field to compute the summary statistics.
         bins (list): List of bins for binning. Default is [0, 25, 50, 75, 100].
         labels (list): List of labels for the bins. Default is ['<25%', '25-50%', '50-75%', '>=75%'].
+        print_table (bool): Whether to print the table (default True). If False, returns the table.
 
     Returns:
-        None: The function prints the percentage of the column in each bin.
+        Table: The rich Table object containing the distribution.
     """
     if field_name not in df.columns:
         warnings.warn(f"Missing column: {field_name}")
-        return
+        return None
 
     if bins is None:
         bins = [0, 25, 50, 75, 100]
@@ -103,13 +110,20 @@ def bin_summary(
 
     # show the resulting percentages
     percentages = percentages.sort_index(ascending=False)
-    percentages_str = percentages.map("{:.2f}%".format)
 
-    print(
-        percentages_str.rename_axis(field_name)
-        .reset_index(name="Jobs %")
-        .to_string(index=False)
-    )
+    # Shorter title for compactness
+    short_name = field_name.replace("Unused ", "").replace(" (%)", "")
+    table = Table(title=f"{short_name} Usage", box=ROUNDED, show_header=True, header_style="bold cyan")
+    table.add_column("Range", style="bold")
+    table.add_column("Jobs", justify="right", style="green")
+
+    for idx, val in percentages.items():
+        table.add_row(str(idx), f"{val:.1f}%")
+
+    if print_table:
+        console.print(table)
+
+    return table
 
 
 class JobsSummary:
@@ -220,6 +234,9 @@ class JobsSummary:
         dask_jobs["Unused Mem (GB)"] = (
             dask_jobs["Req Mem (GB)"] - dask_jobs["Used Mem (GB)"]
         )
+        dask_jobs["Used Mem (%)"] = (
+            dask_jobs["Used Mem (GB)"] / dask_jobs["Req Mem (GB)"] * 100.0
+        )
         dask_jobs["Unused Mem (%)"] = (
             dask_jobs["Unused Mem (GB)"] / dask_jobs["Req Mem (GB)"] * 100.0
         )
@@ -229,22 +246,28 @@ class JobsSummary:
             pd.set_option("display.max_rows", None)
             pd.options.display.float_format = "{:,.2f}".format
 
-            print("\n==============================")
-            print("Dask Job Summary [Filtered]\n")
-
-            # Print summary table (excluding start/end times)
-            print(dask_jobs.drop(columns=exclude_columns, errors="ignore").to_string(index=False))
-            print("\n==============================")
+            # Print pandas DataFrame directly
+            df_display = dask_jobs.drop(columns=exclude_columns, errors="ignore")
+            print("\nDask Job Summary [Filtered]")
+            print(df_display.head())
 
             # Find and display jobs with min/max unused memory
             max_unused = dask_jobs.loc[dask_jobs["Unused Mem (%)"].idxmax()].drop(labels=exclude_columns, errors="ignore")
             min_unused = dask_jobs.loc[dask_jobs["Unused Mem (%)"].idxmin()].drop(labels=exclude_columns, errors="ignore")
 
-            print("Job with Highest Unused Memory (%):")
-            print(max_unused.to_string())
-            print("\nJob with Lowest Unused Memory (%):")
-            print(min_unused.to_string())
-            print("==============================\n")
+            max_table = Table(title="Job with Highest Unused Memory (%)", box=ROUNDED, show_header=True, header_style="bold yellow")
+            max_table.add_column("Field", style="bold")
+            max_table.add_column("Value", justify="right", style="red")
+            for field, val in max_unused.items():
+                max_table.add_row(str(field), f"{val:.2f}" if isinstance(val, float) else str(val))
+            console.print(max_table)
+
+            min_table = Table(title="Job with Lowest Unused Memory (%)", box=ROUNDED, show_header=True, header_style="bold yellow")
+            min_table.add_column("Field", style="bold")
+            min_table.add_column("Value", justify="right", style="green")
+            for field, val in min_unused.items():
+                min_table.add_row(str(field), f"{val:.2f}" if isinstance(val, float) else str(val))
+            console.print(min_table)
 
         self.dask_jobs = dask_jobs
 
@@ -258,10 +281,15 @@ class JobsSummary:
                 If True, prints the summary statistics in a tabular form. Defaults to False.
         """
         if verbose:
-            print ("----------------------------------------------")
             exclude_columns=['Job End', 'Job Start','Exit Status']
-            print (self.dask_jobs.drop(columns=exclude_columns).describe())
-            print ("----------------------------------------------")
+            desc_df = self.dask_jobs.drop(columns=exclude_columns, errors="ignore").describe()
+            desc_table = Table(title="Job Statistics Summary", box=HEAVY, show_header=True, header_style="bold magenta")
+            desc_table.add_column("Stat", style="bold")
+            for col in desc_df.columns:
+                desc_table.add_column(col, justify="right")
+            for idx, row in desc_df.iterrows():
+                desc_table.add_row(str(idx), *[f"{v:.2f}" if isinstance(v, float) else str(v) for v in row])
+            console.print(desc_table)
         # -- compute summary stats for all fields
         fields = [
             "Used Mem (GB)",
@@ -282,27 +310,85 @@ class JobsSummary:
         )
         df.columns = header
 
-        print("------------------------")
-        print("Number of jobs : ", len(self.dask_jobs))
-
         if table:
-            print(df.apply(lambda x: x.map(lambda y: "{:.2f}".format(y))))
+            console.print(Panel(f"[bold green]Number of jobs: {len(self.dask_jobs)}[/bold green]", box=ROUNDED))
+            summary_table = Table(title="Resource Usage Summary of Jobs", box=DOUBLE, show_header=True, header_style="bold cyan")
+            summary_table.add_column("Metric", style="bold")
+            for col in result_dict.keys():
+                summary_table.add_column(col, justify="right")
+            for stat in ["mean", "median", "min", "max"]:
+                summary_table.add_row(stat, *[f"{result_dict[col][stat]:.2f}" for col in result_dict.keys()])
+            console.print(summary_table)
 
         else:
-            # print the results
-            for key, inner_dict in result_dict.items():
-                print(f"{key}:")
-                print(f"\tmean   : {inner_dict['mean']:.2f}")
-                print(f"\tmedian : {inner_dict['median']:.2f}")
-                print(f"\tmin    : {inner_dict['min']:.2f}")
-                print(f"\tmax    : {inner_dict['max']:.2f}")
+            # Create prominent summary header with aggregated results
+            num_jobs = len(self.dask_jobs)
+            total_mem_requested = self.dask_jobs["Req Mem (GB)"].sum()
+            total_mem_used = self.dask_jobs["Used Mem (GB)"].sum()
+            avg_cpu_pct = self.dask_jobs["CPU (%)"].mean() if "CPU (%)" in self.dask_jobs.columns else None
+            avg_elapsed_seconds = self.dask_jobs["Elapsed (h)"].mean() * 3600  # Convert hours to seconds
 
-            print("\n=== Memory & CPU Distribution ===")
+            # Memory per CPU metrics
+            avg_requested_mem_per_cpu = (self.dask_jobs["Req Mem (GB)"] / self.dask_jobs["NCPUs"]).mean()
+            avg_used_mem_per_cpu = (self.dask_jobs["Used Mem (GB)"] / self.dask_jobs["NCPUs"]).mean()
+
+            # Calculate average memory utilization (used/requested)
+            avg_mem_util_pct = (total_mem_used / total_mem_requested * 100) if total_mem_requested > 0 else 0
+
+            # Build summary panel content with cleaner format
+            summary_lines = []
+            summary_lines.append(f"  Memory Requested (avg/CPU):   {avg_requested_mem_per_cpu:.2f} GB")
+            summary_lines.append(f"  Memory Used (avg/CPU):        {avg_used_mem_per_cpu:.2f} GB")
+            summary_lines.append(f"  Memory Utilization:              {avg_mem_util_pct:.1f}%")
+            if avg_cpu_pct is not None:
+                summary_lines.append(f"  CPU Utilization:                 {avg_cpu_pct:.1f}%")
+            summary_lines.append(f"  Job Duration (avg):            {avg_elapsed_seconds:,.0f} s")
+
+            summary_content = "\n".join(summary_lines)
+
+            console.print(Panel(
+                summary_content,
+                title=f"Resource Usage Summary ({num_jobs:,} jobs)",
+                box=DOUBLE,
+                padding=(0, 0)
+            ))
+            console.print()
+
+            # print the results using rich table
+            stats_table = Table(box=ROUNDED, show_header=True, header_style="bold")
+            stats_table.add_column("Metric", style="bold")
+            stats_table.add_column("Mean", justify="right", style="green")
+            stats_table.add_column("Median", justify="right", style="yellow")
+            stats_table.add_column("Min", justify="right", style="blue")
+            stats_table.add_column("Max", justify="right", style="red")
+
+            for key, inner_dict in result_dict.items():
+                stats_table.add_row(
+                    key,
+                    f"{inner_dict['mean']:.2f}",
+                    f"{inner_dict['median']:.2f}",
+                    f"{inner_dict['min']:.2f}",
+                    f"{inner_dict['max']:.2f}"
+                )
+            console.print(stats_table)
+            console.print()
+
+            # Build distribution tables side-by-side
             bins = [0, 25, 50, 75, 100]
             labels = ["<25%", "25-50%", "50-75%", ">=75%"]
-            bin_summary(self.dask_jobs, "Unused Mem (%)", bins, labels)
+
+            dist_tables = []
+            mem_table = bin_summary(self.dask_jobs, "Unused Mem (%)", bins, labels, print_table=False)
+            if mem_table:
+                dist_tables.append(mem_table)
+
             if "CPU (%)" in self.dask_jobs.columns:
-                bin_summary(self.dask_jobs, "CPU (%)", bins, labels)
+                cpu_table = bin_summary(self.dask_jobs, "CPU (%)", bins, labels, print_table=False)
+                if cpu_table:
+                    dist_tables.append(cpu_table)
+
+            if dist_tables:
+                console.print(Columns(dist_tables, equal=True, expand=False))
 
     def dask_csg_report(self, report: str, save_csv: bool = True, sort_var="mem") -> None:
         """
@@ -347,9 +433,15 @@ class JobsSummary:
 
         avg_utilized_mem_cpu = (self.dask_jobs["Used Mem (GB)"] / self.dask_jobs["NCPUs"]).mean()
         avg_requested_mem_cpu = (self.dask_jobs["Req Mem (GB)"] / self.dask_jobs["NCPUs"]).mean()
-        print(f"Average mem/cpu in GB: utilized={avg_utilized_mem_cpu:.2f}, requested={avg_requested_mem_cpu:.2f}")
 
-        print("\n=== All user Report ===")
+        console.print()
+        mem_cpu_text = Text()
+        mem_cpu_text.append("Memory per CPU: ", style="bold")
+        mem_cpu_text.append(f"{avg_utilized_mem_cpu:.2f}", style="green")
+        mem_cpu_text.append(" GB used  /  ", style="dim")
+        mem_cpu_text.append(f"{avg_requested_mem_cpu:.2f}", style="yellow")
+        mem_cpu_text.append(" GB requested", style="dim")
+        console.print(mem_cpu_text)
 
         # ---- Display nicely formatted summary
         pd.options.display.float_format = "{:.2f}".format
@@ -359,11 +451,15 @@ class JobsSummary:
             sort_variable = "Unused CPU-Hour"
         else:
             sort_variable = "Unused MemxHour (GB.hr)"
-        print(
-            dj_agg.sort_values(
-                by=[sort_variable], ascending=False
-            ).to_string(index=False)
-        )
+
+        sorted_df = dj_agg.sort_values(by=[sort_variable], ascending=False)
+
+        csg_table = Table(title="All User Report", box=ROUNDED, show_header=True, header_style="bold cyan")
+        for col in sorted_df.columns:
+            csg_table.add_column(col, justify="right" if sorted_df[col].dtype in ['float64', 'int64'] else "left")
+        for _, row in sorted_df.iterrows():
+            csg_table.add_row(*[f"{v:.2f}" if isinstance(v, float) else str(v) for v in row])
+        console.print(csg_table)
 
         # ---- Save to CSV if requested
         if save_csv:
